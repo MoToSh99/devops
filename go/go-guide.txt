@@ -1,0 +1,13 @@
+For at hente golang:
+    sudo apt install golang-go
+
+For at hente vores web-framework:
+    go get github.com/gorilla/mux
+
+
+For at compile en .go fil:
+    go build minitwit.go
+
+For at køre en .go fil:
+    go run minitwit.go
+
