@@ -5,6 +5,7 @@ For at hente golang:
 
 For at hente vores web-framework:
     go get github.com/gorilla/mux
+    go get github.com/gorilla/sessions
 
 
 For at compile en .go fil:
