@@ -1,3 +1,5 @@
+Følgende commands køres i terminalen;
+
 For at hente golang:
     sudo apt install golang-go
 
@@ -10,4 +12,7 @@ For at compile en .go fil:
 
 For at køre en .go fil:
     go run minitwit.go
+
+For at hente sqlite3 i go-form:
+    go get github.com/mattn/go-sqlite3
 

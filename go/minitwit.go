@@ -1,11 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var DATABASE = connect_db()
 
 func main() {
 
@@ -25,6 +29,48 @@ func main() {
 
 	http.ListenAndServe(":5000", r)
 
+}
+
+//Returns a new connection to the database
+func connect_db() *sql.DB {
+	connection, err := sql.Open("sqlite3", "/tmp/minitwit.db")
+	if err != nil {
+		fmt.Println(err)
+	}
+	return connection
+}
+
+func init_db() {
+	//Initialize the database tables
+}
+
+func query_db(query string, args []string, one bool) {
+	//Query the database and returns a list of dictionaries
+}
+
+func get_user_id(username string) int {
+	//Convenience method to loop up the id for a username
+	var id int
+	rows, err := DATABASE.Query("select user_id from user where username = ?", username)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for rows.Next() {
+		err := rows.Scan(&id)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	return id
+}
+
+func format_datetime(timestamp int) {
+	//Format a timestamp for display
+}
+
+func gravatar_url(email string, size int) {
+	//Return the gravatar image for the given email address
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
