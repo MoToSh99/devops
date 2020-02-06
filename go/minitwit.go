@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -59,7 +60,7 @@ func init_db() {
 	for scanner.Scan() { //Read lines in schema.sql until semicolon which triggers the execute command.
 		currentLine = scanner.Text()
 		statement = statement + currentLine
-		if currentLine == ";" {
+		if strings.Contains(currentLine, ";") {
 			execCommand(statement)
 			statement = "" //Reset statement string
 		}
