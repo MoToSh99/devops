@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -22,6 +23,10 @@ func main() {
 	fmt.Println("Hello Mack")
 
 	r := mux.NewRouter()
+	r.PathPrefix("/css/").Handler(
+		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
+	)
+
 	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
 	r.HandleFunc("/{username}", user_timeline)
@@ -32,9 +37,22 @@ func main() {
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
-
 	http.ListenAndServe(":5000", r)
 
+}
+
+type MessageViewData struct {
+	Text         string
+	Email        string
+	Gravatar_url string
+	Username     string
+	Pub_date     string
+}
+
+type RequestData struct {
+	Title           string
+	RequestEndpoint string
+	Messages        []MessageViewData
 }
 
 //Returns a new connection to the database
@@ -100,8 +118,9 @@ func format_datetime(timestamp int) {
 	//Format a timestamp for display
 }
 
-func gravatar_url(email string, size int) {
+func gravatar_url(email string, size int) string {
 	//Return the gravatar image for the given email address
+	return email
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +128,21 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "public_timeline hit")
+	fmt.Println("We got a visitor from: " + r.RemoteAddr)
+	data := RequestData{
+		Title:           "title",
+		RequestEndpoint: "public_timeline",
+		Messages: []MessageViewData{
+			{Text: "tweet tweet", Email: "email", Gravatar_url: gravatar_url("https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50", 64),
+				Username: "ikke bent", Pub_date: "10/04/2190"},
+			{Text: "tweet tweet", Email: "email", Gravatar_url: gravatar_url("https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50", 64),
+				Username: "bent", Pub_date: "10/04/2190"},
+		},
+	}
+
+	tmpl := template.Must(template.ParseFiles("./static/templates/timeline.html"))
+
+	tmpl.Execute(w, data)
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
