@@ -22,7 +22,7 @@ var STORE = sessions.NewCookieStore(SECRET_KEY)
 func main() {
 
 	fmt.Println("Running: localhost:5000/public")
-	init_db()
+	//init_db()
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
@@ -166,16 +166,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 		loginPost(w, r)
 	}
 
-	// session, err := STORE.Get(r, "session")
-
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// session.AddFlash("You were logged in")
-
 }
 
 func loginGet(w http.ResponseWriter, r *http.Request) {
@@ -185,6 +175,10 @@ func loginGet(w http.ResponseWriter, r *http.Request) {
 
 func loginPost(w http.ResponseWriter, r *http.Request) {
 	errorMsg := ""
+	data := struct {
+		HasError bool
+		ErrorMsg string
+	}{true, errorMsg}
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -195,28 +189,32 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = "You have to enter a password"
 	}
 
-	user := Authenticate(username, password)
-	if user {
-
-	} else {
-		errorMsg = "Cannot authenticate user"
+	userFound := Authenticate(username, password)
+	if !userFound {
+		tmpl := template.Must(template.ParseFiles("./static/templates/login.html"))
+		data.HasError = true
+		data.ErrorMsg = "Cannot recognize user"
+		tmpl.Execute(w, data)
+		return
 	}
 
 	tmpl := template.Must(template.ParseFiles("./static/templates/timeline.html"))
-	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{true, errorMsg}
+
 	tmpl.Execute(w, data)
 }
 
 func Authenticate(username string, password string) bool {
+
 	hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
-	rows, err := DATABASE.Query("select user_id from user where username = ? and pw_hash = ?", username, hashedPasswordInBytes)
-	if err != nil {
-		fmt.Println(err)
+	stmt, err := DATABASE.Prepare("SELECT user_id FROM user WHERE username = ? AND pw_hash = ?")
+
+	var user_id string
+	err = stmt.QueryRow(username, hashedPasswordInBytes).Scan(&user_id)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		panic(err)
+	} else if user_id == "" {
+		return false
 	}
-	fmt.Println(rows)
 	return true
 
 }
