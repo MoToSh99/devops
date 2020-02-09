@@ -213,11 +213,7 @@ func isUsernameTaken(username string) bool {
 
 func registerGet(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./static/templates/register.html"))
-	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{true, "123"}
-	tmpl.Execute(w, data)
+	tmpl.Execute(w, nil)
 }
 
 func registerUser(username string, email string, hashedPassword string) bool {
