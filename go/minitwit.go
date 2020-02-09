@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var DATABASE = connect_db()
@@ -21,22 +22,21 @@ var STORE = sessions.NewCookieStore(SECRET_KEY)
 func main() {
 
 	fmt.Println("Hello Mack")
-
+	// init_db()
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
 	)
 
+	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
-	r.HandleFunc("/{username}", user_timeline)
-	r.HandleFunc("/{username}/follow", follow_user)
-	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/logout", logout)
-
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
-	r.HandleFunc("/", timeline)
+	r.HandleFunc("/{username}", user_timeline)
+	r.HandleFunc("/{username}/follow", follow_user)
+	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	http.ListenAndServe(":5000", r)
 
 }
@@ -199,6 +199,64 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		registerGet(w, r)
+	} else if r.Method == "POST" {
+		registerPost(w, r)
+	}
+
+}
+
+func isUsernameTaken(username string) bool {
+	return false
+}
+
+func registerGet(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./static/templates/register.html"))
-	tmpl.Execute(w, nil)
+	data := struct {
+		HasError bool
+		ErrorMsg string
+	}{true, "123"}
+	tmpl.Execute(w, data)
+}
+
+func registerUser(username string, email string, hashedPassword string) bool {
+	queryString := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
+	statement, err := DATABASE.Prepare(queryString)
+	_, err = statement.Exec(username, email, hashedPassword)
+	checkErr(err)
+
+	return true
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func registerPost(w http.ResponseWriter, r *http.Request) {
+	errorMsg := ""
+
+	if r.FormValue("username") == "" {
+		errorMsg = "You have to enter a username"
+	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
+		errorMsg = "You have to enter a valid email address"
+	} else if r.FormValue("password") == "" {
+		errorMsg = "You have to enter a password"
+	} else if r.FormValue("password") != r.FormValue("password2") {
+		errorMsg = "The two passwords do not match"
+	} else if isUsernameTaken(r.FormValue("username")) {
+		errorMsg = "The username is already taken"
+	} else {
+		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
+		registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
+	}
+
+	tmpl := template.Must(template.ParseFiles("./static/templates/register.html"))
+	data := struct {
+		HasError bool
+		ErrorMsg string
+	}{true, errorMsg}
+	tmpl.Execute(w, data)
 }
