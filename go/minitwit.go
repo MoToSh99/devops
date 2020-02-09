@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"encoding/gob"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -18,6 +21,7 @@ import (
 var DATABASE = connect_db()
 var SECRET_KEY = []byte("development key")
 var STORE = sessions.NewCookieStore(SECRET_KEY)
+var PER_PAGE = 30
 
 func main() {
 
@@ -27,6 +31,7 @@ func main() {
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
 	)
+	gob.Register(&User{})
 
 	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
@@ -53,6 +58,13 @@ type RequestData struct {
 	Title           string
 	RequestEndpoint string
 	Messages        []MessageViewData
+}
+
+type User struct {
+	User_id  int
+	Username string
+	Email    string
+	Pw_hash  string
 }
 
 //Returns a new connection to the database
@@ -124,7 +136,67 @@ func gravatar_url(email string, size int) string {
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Timeline hit")
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := session.Values["user"]
+	if user == nil {
+		http.Redirect(w, r, "/public", http.StatusFound)
+	}
+	user_id := (user.(*User)).User_id
+	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
+	where message.flagged = 0 and message.author_id = user.user_id and (
+		user.user_id = ? or
+		user.user_id in (select whom_id from follower
+								where who_id = ?))
+	order by message.pub_date desc limit ?`)
+	rows, err := stmt.Query(user_id, user_id, PER_PAGE)
+	if err != nil {
+		panic(err)
+	}
+
+	messages := []MessageViewData{}
+
+	for rows.Next() {
+		var message_id int
+		var author_id int
+		var text string
+		var pub_date int64
+		var flagged int
+
+		var user_id int
+		var username string
+		var email string
+		var pw_hash string
+
+		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     time.Unix(pub_date, 0).String(),
+		}
+		messages = append(messages, message)
+	}
+
+	data := RequestData{
+		Title:           "title",
+		RequestEndpoint: "public_timeline",
+		Messages:        messages,
+	}
+
+	tmpl := template.Must(template.ParseFiles("./static/templates/timeline.html"))
+
+	tmpl.Execute(w, data)
+
 }
 
 func public_timeline(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +218,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "user_timeline hit")
+
 }
 func follow_user(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "follow_user hit")
@@ -174,11 +246,17 @@ func loginGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginPost(w http.ResponseWriter, r *http.Request) {
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	errorMsg := ""
 	data := struct {
 		HasError bool
 		ErrorMsg string
-	}{true, errorMsg}
+	}{false, errorMsg}
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -189,7 +267,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = "You have to enter a password"
 	}
 
-	userFound := Authenticate(username, password)
+	userFound, user := Authenticate(username, password)
 	if !userFound {
 		tmpl := template.Must(template.ParseFiles("./static/templates/login.html"))
 		data.HasError = true
@@ -198,26 +276,41 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles("./static/templates/timeline.html"))
+	session.Values["user"] = user
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	tmpl.Execute(w, data)
+	http.Redirect(w, r, "/", http.StatusFound)
+
 }
 
-func Authenticate(username string, password string) bool {
+func Authenticate(username string, password string) (bool, *User) {
 
-	hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
-	stmt, err := DATABASE.Prepare("SELECT user_id, pw_hash FROM user WHERE username = ?")
+	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
 	user_id := -999
+	email := ""
 	pw_hash := ""
-	err = stmt.QueryRow(username).Scan(&user_id, &pw_hash)
+	err = stmt.QueryRow(username).Scan(&user_id, &username, &email, &pw_hash)
 
-	// err = stmt.QueryRow(username, hashedPasswordInBytes).Scan(&user_id)
+	user := &User{
+		User_id:  user_id,
+		Username: username,
+		Email:    email,
+		Pw_hash:  pw_hash,
+	}
+
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		panic(err)
-	} else if user_id == -999 || pw_hash == "" || string(hashedPasswordInBytes) != pw_hash {
-		return false
 	}
-	return true
+
+	err = bcrypt.CompareHashAndPassword([]byte(pw_hash), []byte(password))
+	if user_id == -999 || pw_hash == "" || err != nil {
+		return false, nil
+	}
+	return true, user
 
 }
 
@@ -233,7 +326,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	session.AddFlash("You were logged out")
 	session.Values["user_id"] = nil
 	sessions.Save(r, w)
-	http.Redirect(w, r, "public_timeline", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusFound)
 
 }
 
