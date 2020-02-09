@@ -206,13 +206,15 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 func Authenticate(username string, password string) bool {
 
 	hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
-	stmt, err := DATABASE.Prepare("SELECT user_id FROM user WHERE username = ? AND pw_hash = ?")
+	stmt, err := DATABASE.Prepare("SELECT user_id, pw_hash FROM user WHERE username = ?")
+	user_id := -999
+	pw_hash := ""
+	err = stmt.QueryRow(username).Scan(&user_id, &pw_hash)
 
-	var user_id string
-	err = stmt.QueryRow(username, hashedPasswordInBytes).Scan(&user_id)
+	// err = stmt.QueryRow(username, hashedPasswordInBytes).Scan(&user_id)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		panic(err)
-	} else if user_id == "" {
+	} else if user_id == -999 || pw_hash == "" || string(hashedPasswordInBytes) != pw_hash {
 		return false
 	}
 	return true
