@@ -27,7 +27,6 @@ func main() {
 		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
 	)
 
-	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
 	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/{username}/follow", follow_user)
@@ -37,6 +36,7 @@ func main() {
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/", timeline)
 	http.ListenAndServe(":5000", r)
 
 }
@@ -199,5 +199,6 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "register hit")
+	tmpl := template.Must(template.ParseFiles("./static/templates/register.html"))
+	tmpl.Execute(w, nil)
 }
