@@ -21,8 +21,8 @@ var STORE = sessions.NewCookieStore(SECRET_KEY)
 
 func main() {
 
-	fmt.Println("Hello Mack")
-	// init_db()
+	fmt.Println("Running: localhost:5000/public")
+	init_db()
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("static/css/"))),
@@ -160,25 +160,64 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	session, err := STORE.Get(r, "session")
-
-	if err != nil {
-		fmt.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if r.Method == "GET" {
+		loginGet(w, r)
+	} else if r.Method == "POST" {
+		loginPost(w, r)
 	}
 
-	fmt.Fprint(w, "login hit")
+	// session, err := STORE.Get(r, "session")
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// session.AddFlash("You were logged in")
+
+}
+
+func loginGet(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("./static/templates/login.html"))
+	tmpl.Execute(w, nil)
+}
+
+func loginPost(w http.ResponseWriter, r *http.Request) {
+	errorMsg := ""
 	username := r.FormValue("username")
-	//password := r.FormValue("password")
-	//redirectTarget := "timeline"
-	user, err := DATABASE.Query("select * from user where username = ?", username)
-	if user.Err != nil { //Jeg skal tjekke om jeg har fundet en bruger. Idk man
-		fmt.Println("Invalid username")
-	}
-	//check password hash osv osv.
+	password := r.FormValue("password")
 
-	session.AddFlash("You were logged in")
+	if username == "" {
+		errorMsg = "You have to enter a username"
+	}
+	if password == "" {
+		errorMsg = "You have to enter a password"
+	}
+
+	user := Authenticate(username, password)
+	if user {
+
+	} else {
+		errorMsg = "Cannot authenticate user"
+	}
+
+	tmpl := template.Must(template.ParseFiles("./static/templates/timeline.html"))
+	data := struct {
+		HasError bool
+		ErrorMsg string
+	}{true, errorMsg}
+	tmpl.Execute(w, data)
+}
+
+func Authenticate(username string, password string) bool {
+	hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
+	rows, err := DATABASE.Query("select user_id from user where username = ? and pw_hash = ?", username, hashedPasswordInBytes)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(rows)
+	return true
 
 }
 
