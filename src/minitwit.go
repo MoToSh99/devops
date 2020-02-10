@@ -72,6 +72,12 @@ type User struct {
 	Pw_hash  string
 }
 
+type UserTimeLine struct {
+	Who_id          int
+	Whom_id         int
+	Profile_user_id int
+}
+
 func get_user_id(username string) int {
 	//Convenience method to loop up the id for a username
 	var id int
@@ -178,6 +184,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User timeline hit")
 	session, err := STORE.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -205,6 +212,39 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	err = stmt.QueryRow(user_id, profile_user_id).Scan(&who_id, &whom_id)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		panic(err)
+	}
+
+	var rows *sql.Rows = database.Query_db(`select message.*, user.* from message, user where
+	user.user_id = message.author_id and user.user_id = ?
+	order by message.pub_date desc limit ?`, []string{string(profile_user_id), string(PER_PAGE)}, DATABASE)
+	fmt.Println("query run")
+	for rows.Next() {
+		var message_id int
+		var author_id int
+		var text string
+		var pub_date int64
+		var flagged int
+
+		var user_id int
+		var username string
+		var email string
+		var pw_hash string
+
+		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
+
+		data := UserTimeLine{
+			Who_id:          who_id,
+			Whom_id:         whom_id,
+			Profile_user_id: profile_user_id,
+		}
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+
+		tmpl.Execute(w, data)
 	}
 
 }
