@@ -1,0 +1,35 @@
+Følgende commands køres i terminalen;
+
+For at hente golang:
+    sudo apt install golang-go
+
+For at hente vores web-framework:
+    go get github.com/gorilla/mux
+    go get github.com/gorilla/sessions
+
+
+For at compile en .go fil:
+    go build minitwit.go
+
+For at køre en .go fil:
+    go run minitwit.go
+
+For at hente sqlite3 i go-form:
+    go get github.com/mattn/go-sqlite3
+
+
+
+
+---------------------
+
+Fjern gammel skrald version af go:
+sudo apt-get remove golang-go
+sudo apt-get remove --auto-remove golang-go
+
+
+For at hente nyeste version af golang:
+wget https://golang.org/doc/install?download=go1.13.7.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.13.7.linux-amd64.tar.gz
+
+Tilføj til miljøvariabler:
+export PATH=$PATH:/usr/local/go/bin
