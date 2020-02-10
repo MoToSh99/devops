@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/gob"
 	"fmt"
 	"go/src/database"
@@ -74,10 +75,7 @@ type User struct {
 func get_user_id(username string) int {
 	//Convenience method to loop up the id for a username
 	var id int
-	rows, err := DATABASE.Query("select user_id from user where username = ?", username)
-	if err != nil {
-		fmt.Println(err)
-	}
+	var rows *sql.Rows = database.Query_db("select user_id from user where username = ?", []string{username}, DATABASE)
 	for rows.Next() {
 		err := rows.Scan(&id)
 
