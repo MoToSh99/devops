@@ -180,6 +180,34 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := session.Values["user"]
+	username := (user.(*User)).Username
+	user_id := (user.(*User)).User_id
+
+	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
+	profile_user_id := -999
+	profile_email := ""
+	profile_pw_hash := ""
+	profile_username := ""
+	err = stmt.QueryRow(username).Scan(&profile_user_id, &profile_username, &profile_email, &profile_pw_hash)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		panic(err)
+	}
+
+	stmt, err = DATABASE.Prepare(`select 1 from follower where
+	follower.who_id = ? and follower.whom_id = ?`)
+	var who_id int
+	var whom_id int
+	err = stmt.QueryRow(user_id, profile_user_id).Scan(&who_id, &whom_id)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		panic(err)
+	}
 
 }
 func follow_user(w http.ResponseWriter, r *http.Request) {
@@ -237,9 +265,12 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 	errorMsg := ""
 	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{false, errorMsg}
+		HasError   bool
+		ErrorMsg   string
+		IsLoggedIn bool
+		Username   string
+	}{false, errorMsg, false, ""}
+
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -251,10 +282,12 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userFound, user := Authenticate(username, password)
+
 	if !userFound {
 		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/login.html"))
 		data.HasError = true
 		data.ErrorMsg = "Cannot recognize user"
+		data.IsLoggedIn = false
 		tmpl.Execute(w, data)
 		return
 	}
@@ -266,7 +299,10 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+	data.IsLoggedIn = true
+	data.Username = user.Username
+	tmpl.Execute(w, data)
 
 }
 
@@ -309,7 +345,13 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	session.AddFlash("You were logged out")
 	session.Values["user"] = nil
 	sessions.Save(r, w)
-	http.Redirect(w, r, "/", http.StatusFound)
+
+	data := struct {
+		IsLoggedIn bool
+	}{false}
+
+	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+	tmpl.Execute(w, data)
 
 }
 

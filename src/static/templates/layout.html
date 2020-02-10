@@ -5,24 +5,24 @@
 
 </head>
 <body>
-  <div class=page>
-    <h1>MiniTwit</h1>
-    <div class=navigation>
-    {{ if false }}
-    <a href="">my timeline</a> |
-    <a href="/public" >public timeline</a> |
-    <a href="/logout">sign out USERNAME</a>
-    {{ else if true }}
-    <a href="/public">public timeline</a> |
-    <a href="/register">sign up</a> |
-    <a href="/login">sign in</a href="/login">
-    {{ endif }}
-    </div>
-    <div class=body>
-    </div>
-    <div class=footer>
-      MiniTwit &mdash; A Gorilla Application
-    </div>
+<div class=page>
+  <h1>MiniTwit</h1>
+  <div class=navigation>
+  {{ if .IsLoggedIn }}
+  <a href="">my timeline</a> |
+  <a href="/public" >public timeline</a> |
+  <a href="/logout">sign out {{ .Username }} </a>
+  {{ else }}
+  <a href="/public">public timeline</a> |
+  <a href="/register">sign up</a> |
+  <a href="/login">sign in</a href="/login">
+  {{ endif }}
   </div>
+  <div class=body>
+  </div>
+  <div class=footer>
+    MiniTwit &mdash; A Gorilla Application
+  </div>
+</div>
 </body>
 
