@@ -106,7 +106,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 	user := session.Values["user"]
 	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusFound)
+		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	user_id := (user.(*User)).User_id
 	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
@@ -191,6 +191,27 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 func add_message(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "add_message hit")
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := session.Values["user"]
+	if user == nil {
+		http.Redirect(w, r, "/public", http.StatusNotFound)
+	}
+	text := r.FormValue("text")
+	user_id := (user.(*User)).User_id
+
+	if text != "" {
+		queryString := `INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`
+		statement, err := DATABASE.Prepare(queryString)
+		_, err = statement.Exec(user_id, text, time.Now())
+		checkErr(err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -286,7 +307,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.AddFlash("You were logged out")
-	session.Values["user_id"] = nil
+	session.Values["user"] = nil
 	sessions.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
 
