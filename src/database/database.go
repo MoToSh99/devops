@@ -46,6 +46,13 @@ func ExecCommand(sqlCommand string, db *sql.DB) {
 	statement.Exec()
 }
 
-func Query_db(query string, args []string, one bool) {
-	//Query the database and returns a list of dictionaries
+func Query_db(query string, args []string, db *sql.DB) *sql.Rows {
+	//Query the database and returns a list of rows
+
+	rows, err := db.Query(query, args)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return rows
+
 }
