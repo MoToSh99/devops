@@ -10,7 +10,7 @@ import (
 
 func Init_db(db *sql.DB) {
 	//Initialize the database tables
-	file, err := os.Open("database/schema.sql")
+	file, err := os.Open("src/database/schema.sql")
 	if err != nil {
 		fmt.Println(err)
 	}
