@@ -124,7 +124,8 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 	user := session.Values["user"]
 	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusNotFound)
+		http.Redirect(w, r, "/public", http.StatusFound)
+		return
 	}
 	user_id := (user.(*User)).User_id
 	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
@@ -184,6 +185,14 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 func public_timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: " + r.RemoteAddr)
+
+	session, err := STORE.Get(r, "session")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	data := RequestData{
 		Title:           "title",
 		RequestEndpoint: "public_timeline",
@@ -195,6 +204,13 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	user := session.Values["user"]
+	if user != nil {
+		username := (user.(*User)).Username
+		data.IsLoggedIn = true
+		data.SessionUser = username
+	}
+
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 
 	tmpl.Execute(w, data)
@@ -203,6 +219,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 func user_timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User timeline hit")
 	session, err := STORE.Get(r, "session")
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -211,7 +228,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	user := session.Values["user"]
 	username := (user.(*User)).Username
 	user_id := (user.(*User)).User_id
-
+	// cookie, _ := r.Cookie(username)
+	// fmt.Println(w, username)
 	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
 	profile_user_id := -999
 	profile_email := ""
@@ -233,10 +251,12 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 	followed = true
 
-	var rows *sql.Rows = database.Query_db(`select message.*, user.* from message, user where
-	user.user_id = message.author_id and user.user_id = ?
-	order by message.pub_date desc limit ?`, []string{string(profile_user_id), string(PER_PAGE)}, DATABASE)
-	fmt.Println("query run")
+	stmt, err = DATABASE.Prepare(`select message.*, user.* from message, user
+	where user.user_id = message.author_id and user.user_id = ? 
+	order by message.pub_date desc limit ?`)
+
+	rows, err := stmt.Query(profile_user_id, PER_PAGE)
+
 	messages := []MessageViewData{}
 	for rows.Next() {
 		var message_id int
@@ -255,6 +275,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err)
 		}
+
 		message := MessageViewData{
 			Text:         text,
 			Email:        email,
@@ -363,20 +384,23 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	expiration := time.Now().Add(365 * 24 * 60)
+	cookie := http.Cookie{Name: username, Value: "hej", Expires: expiration}
+
 	session.Values["user"] = user
+	http.SetCookie(w, &cookie)
 	err = session.Save(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	} else {
+		// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+		data.IsLoggedIn = true
+		data.Username = user.Username
+		data.RequestEndpoint = "public_timeline"
+		// tmpl.Execute(w, data)
+		http.Redirect(w, r, "/public", http.StatusFound)
 	}
-
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
-	data.IsLoggedIn = true
-	data.Username = user.Username
-	data.RequestEndpoint = "public_timeline"
-	tmpl.Execute(w, data)
-	//http.Redirect(w, r, "/public_timeline", http.StatusFound)
-
 }
 
 func Authenticate(username string, password string) (bool, *User) {

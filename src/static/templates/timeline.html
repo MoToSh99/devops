@@ -9,7 +9,8 @@
   <h1>MiniTwit</h1>
   <div class=navigation>
 {{ if .IsLoggedIn }}
-    <a href="/">my timeline</a> |
+    {{- $usernamepath := .SessionUser -}}
+    <a href={{$usernamepath}}>my timeline</a> |
     <a href="/public" >public timeline</a> |
     <a href="/logout">sign out {{ .Username }}</a>
 {{ else }}
