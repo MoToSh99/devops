@@ -391,7 +391,7 @@ func Authenticate(username string, password string) (bool, *User) {
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "logout hit")
+	fmt.Println("logout hit")
 	session, err := STORE.Get(r, "session")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -400,15 +400,17 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.AddFlash("You were logged out")
-	session.Values["user"] = nil
+
+	session.Options.MaxAge = -1
+	err = session.Save(r, w)
+	if err != nil {
+		panic(err)
+	}
 	sessions.Save(r, w)
 
-	data := struct {
-		IsLoggedIn bool
-	}{false}
-
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
-	tmpl.Execute(w, data)
+	// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+	// tmpl.Execute(w, nil)
+	http.Redirect(w, r, "/public", http.StatusFound)
 
 }
 
