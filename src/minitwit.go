@@ -47,6 +47,7 @@ func main() {
 	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
+	http.Handle("/", Before_request(r))
 	http.ListenAndServe(":5000", r)
 
 }
@@ -74,6 +75,21 @@ type User struct {
 	Username string
 	Email    string
 	Pw_hash  string
+}
+
+func Before_request(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("middleware", r.URL)
+		getSession(w, r)
+	})
+}
+
+func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return session
 }
 
 func get_user_id(username string) int {
