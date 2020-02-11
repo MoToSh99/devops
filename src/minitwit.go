@@ -47,7 +47,7 @@ func main() {
 	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
-	http.Handle("/", Before_request(r))
+	// http.Handle("/", Before_request(r))
 	http.ListenAndServe(":5000", r)
 
 }
@@ -135,7 +135,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	order by message.pub_date desc limit ?`)
 	rows, err := stmt.Query(user_id, user_id, PER_PAGE)
 	if err != nil {
-		panic(err)
+		http.Redirect(w, r, "/public_timeline", http.StatusForbidden)
 	}
 
 	messages := []MessageViewData{}
