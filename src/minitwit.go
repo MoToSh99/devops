@@ -359,7 +359,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 	data.Username = user.Username
 	data.RequestEndpoint = "public_timeline"
 	tmpl.Execute(w, data)
-	http.Redirect(w, r, "/public_timeline", http.StatusFound)
+	//http.Redirect(w, r, "/public_timeline", http.StatusFound)
 
 }
 
@@ -463,10 +463,16 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 		registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
 	}
 
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
-	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{true, errorMsg}
-	tmpl.Execute(w, data)
+	if errorMsg != "" {
+		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
+		data := struct {
+			HasError   bool
+			ErrorMsg   string
+			IsLoggedIn bool
+		}{true, errorMsg, false}
+		tmpl.Execute(w, data)
+	} else {
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}
+
 }
