@@ -47,6 +47,7 @@ func main() {
 	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
+	http.Handle("/", Before_request(r))
 	http.ListenAndServe(":5000", r)
 
 }
@@ -63,6 +64,10 @@ type RequestData struct {
 	Title           string
 	RequestEndpoint string
 	Messages        []MessageViewData
+	IsLoggedIn      bool
+	SessionUser     string
+	UserProfile     string
+	Followed        bool
 }
 
 type User struct {
@@ -70,6 +75,21 @@ type User struct {
 	Username string
 	Email    string
 	Pw_hash  string
+}
+
+func Before_request(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("middleware", r.URL)
+		getSession(w, r)
+	})
+}
+
+func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return session
 }
 
 func get_user_id(username string) int {
@@ -104,7 +124,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 	user := session.Values["user"]
 	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusFound)
+		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	user_id := (user.(*User)).User_id
 	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
@@ -151,6 +171,9 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		Title:           "title",
 		RequestEndpoint: "public_timeline",
 		Messages:        messages,
+		IsLoggedIn:      false,
+		SessionUser:     (user.(*User)).Username,
+		UserProfile:     "",
 	}
 
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
@@ -178,6 +201,83 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User timeline hit")
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := session.Values["user"]
+	username := (user.(*User)).Username
+	user_id := (user.(*User)).User_id
+
+	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
+	profile_user_id := -999
+	profile_email := ""
+	profile_pw_hash := ""
+	profile_username := ""
+	err = stmt.QueryRow(username).Scan(&profile_user_id, &profile_username, &profile_email, &profile_pw_hash)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		panic(err)
+	}
+
+	stmt, err = DATABASE.Prepare(`select 1 from follower where
+	follower.who_id = ? and follower.whom_id = ?`)
+	var who_id int
+	var whom_id int
+	var followed bool
+	err = stmt.QueryRow(user_id, profile_user_id).Scan(&who_id, &whom_id)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		followed = false
+	}
+	followed = true
+
+	var rows *sql.Rows = database.Query_db(`select message.*, user.* from message, user where
+	user.user_id = message.author_id and user.user_id = ?
+	order by message.pub_date desc limit ?`, []string{string(profile_user_id), string(PER_PAGE)}, DATABASE)
+	fmt.Println("query run")
+	messages := []MessageViewData{}
+	for rows.Next() {
+		var message_id int
+		var author_id int
+		var text string
+		var pub_date int64
+		var flagged int
+
+		var user_id int
+		var username string
+		var email string
+		var pw_hash string
+
+		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     time.Unix(pub_date, 0).String(),
+		}
+		messages = append(messages, message)
+	}
+
+	data := RequestData{
+		Title:           "title",
+		RequestEndpoint: "user_timeline",
+		Messages:        messages,
+		IsLoggedIn:      true,
+		SessionUser:     username,
+		UserProfile:     profile_username,
+		Followed:        followed,
+	}
+
+	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+
+	tmpl.Execute(w, data)
 
 }
 func follow_user(w http.ResponseWriter, r *http.Request) {
@@ -189,6 +289,27 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 func add_message(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "add_message hit")
+	session, err := STORE.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user := session.Values["user"]
+	if user == nil {
+		http.Redirect(w, r, "/public", http.StatusNotFound)
+	}
+	text := r.FormValue("text")
+	user_id := (user.(*User)).User_id
+
+	if text != "" {
+		queryString := `INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`
+		statement, err := DATABASE.Prepare(queryString)
+		_, err = statement.Exec(user_id, text, time.Now())
+		checkErr(err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -214,9 +335,13 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 	errorMsg := ""
 	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{false, errorMsg}
+		HasError        bool
+		ErrorMsg        string
+		IsLoggedIn      bool
+		Username        string
+		RequestEndpoint string
+	}{false, errorMsg, false, "", ""}
+
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -228,10 +353,12 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userFound, user := Authenticate(username, password)
+
 	if !userFound {
 		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/login.html"))
 		data.HasError = true
 		data.ErrorMsg = "Cannot recognize user"
+		data.IsLoggedIn = false
 		tmpl.Execute(w, data)
 		return
 	}
@@ -243,7 +370,12 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+	data.IsLoggedIn = true
+	data.Username = user.Username
+	data.RequestEndpoint = "public_timeline"
+	tmpl.Execute(w, data)
+	//http.Redirect(w, r, "/public_timeline", http.StatusFound)
 
 }
 
@@ -275,7 +407,7 @@ func Authenticate(username string, password string) (bool, *User) {
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "logout hit")
+	fmt.Println("logout hit")
 	session, err := STORE.Get(r, "session")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -284,9 +416,17 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.AddFlash("You were logged out")
-	session.Values["user_id"] = nil
+
+	session.Options.MaxAge = -1
+	err = session.Save(r, w)
+	if err != nil {
+		panic(err)
+	}
 	sessions.Save(r, w)
-	http.Redirect(w, r, "/", http.StatusFound)
+
+	// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
+	// tmpl.Execute(w, nil)
+	http.Redirect(w, r, "/public", http.StatusFound)
 
 }
 
@@ -341,10 +481,16 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 		registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
 	}
 
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
-	data := struct {
-		HasError bool
-		ErrorMsg string
-	}{true, errorMsg}
-	tmpl.Execute(w, data)
+	if errorMsg != "" {
+		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
+		data := struct {
+			HasError   bool
+			ErrorMsg   string
+			IsLoggedIn bool
+		}{true, errorMsg, false}
+		tmpl.Execute(w, data)
+	} else {
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}
+
 }
