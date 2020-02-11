@@ -194,8 +194,8 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := RequestData{
-		Title:           "title",
-		RequestEndpoint: "public_timeline",
+		Title:           "MEGA TITLE",
+		RequestEndpoint: "timeline",
 		Messages: []MessageViewData{
 			{Text: "tweet tweet", Email: "email", Gravatar_url: gravatar_url("https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50", 64),
 				Username: "ikke bent", Pub_date: "10/04/2190"},
@@ -210,10 +210,10 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		data.IsLoggedIn = true
 		data.SessionUser = username
 	}
-
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 
 	tmpl.Execute(w, data)
+	fmt.Println(data)
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {

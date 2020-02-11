@@ -12,35 +12,28 @@
     {{- $usernamepath := .SessionUser -}}
     <a href={{$usernamepath}}>my timeline</a> |
     <a href="/public" >public timeline</a> |
-    <a href="/logout">sign out {{ .Username }}</a>
+    <a href="/logout">sign out [{{ .SessionUser }}]</a>
 {{ else }}
     <a href="/public">public timeline</a> |
     <a href="/register">sign up</a> |
     <a href="/login">sign in</a href="/login">
-{{end}}
+{{ end }}
   </div>
-  
   <div class=body>
 
-
-
-
 <h2>
-  {{ if eq "public_timeline" .RequestEndpoint }}
+  {{ if eq "timeline" .RequestEndpoint }}
     Public Timeline
-  {{ else if eq "user_timeline" .RequestEndpoint}}
-    {{ .username }}'s Timeline
+  {{ else if eq "user_timeline" .RequestEndpoint }}
+    {{ .SessionUser }}'s Timeline
   {{ else }}
     My Timeline
   {{ end }}
  </h2>
-
-
-  <h2>{{ .Title }}</h2>
   {{ if .IsLoggedIn }}
     {{ if eq .RequestEndpoint "user_timeline" }}
       <div class=followstatus>
-      {{ if eq .Username .UserProfile }}
+      {{ if eq .SessionUser .UserProfile }}
         This is you!
       {{ else if .Followed }}
         You are currently following this user.
@@ -54,8 +47,8 @@
       </div>
     {{ else if eq .RequestEndpoint "timeline" }}
       <div class=twitbox>
-        <h3>What's on your mind {{ .Username }}?</h3>
-        <form action=" /add_message" method=post>
+        <h3>What's on your mind {{ .SessionUser }}?</h3>
+        <form action="/add_message" method=post>
           <p><input type=text name=text size=60><!--
           --><input type=submit value="Share">
         </form>
