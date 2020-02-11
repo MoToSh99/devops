@@ -123,6 +123,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := session.Values["user"]
+	fmt.Println(user)
 	if user == nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
 		return
@@ -136,7 +137,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	order by message.pub_date desc limit ?`)
 	rows, err := stmt.Query(user_id, user_id, PER_PAGE)
 	if err != nil {
-		http.Redirect(w, r, "/public_timeline", http.StatusForbidden)
+		http.Redirect(w, r, "/public", http.StatusForbidden)
 	}
 
 	messages := []MessageViewData{}
@@ -145,7 +146,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		var message_id int
 		var author_id int
 		var text string
-		var pub_date int64
+		var pub_date string
 		var flagged int
 
 		var user_id int
@@ -163,16 +164,16 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			Email:        email,
 			Gravatar_url: gravatar_url(email, 64),
 			Username:     username,
-			Pub_date:     time.Unix(pub_date, 0).String(),
+			Pub_date:     pub_date,
 		}
 		messages = append(messages, message)
 	}
 
 	data := RequestData{
 		Title:           "title",
-		RequestEndpoint: "public_timeline",
+		RequestEndpoint: "",
 		Messages:        messages,
-		IsLoggedIn:      false,
+		IsLoggedIn:      true,
 		SessionUser:     (user.(*User)).Username,
 		UserProfile:     "",
 	}
@@ -193,15 +194,44 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
+	where message.flagged = 0 and message.author_id = user.user_id
+	order by message.pub_date desc limit ?`)
+	rows, err := stmt.Query(PER_PAGE)
+
+	messages := []MessageViewData{}
+
+	for rows.Next() {
+		var message_id int
+		var author_id int
+		var text string
+		var pub_date string
+		var flagged int
+
+		var user_id int
+		var username string
+		var email string
+		var pw_hash string
+
+		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     pub_date,
+		}
+		messages = append(messages, message)
+	}
+
 	data := RequestData{
 		Title:           "MEGA TITLE",
 		RequestEndpoint: "timeline",
-		Messages: []MessageViewData{
-			{Text: "tweet tweet", Email: "email", Gravatar_url: gravatar_url("https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50", 64),
-				Username: "ikke bent", Pub_date: "10/04/2190"},
-			{Text: "tweet tweet", Email: "email", Gravatar_url: gravatar_url("https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50", 64),
-				Username: "bent", Pub_date: "10/04/2190"},
-		},
+		Messages:        messages,
 	}
 
 	user := session.Values["user"]
@@ -213,7 +243,6 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 
 	tmpl.Execute(w, data)
-	fmt.Println(data)
 }
 
 func user_timeline(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +291,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		var message_id int
 		var author_id int
 		var text string
-		var pub_date int64
+		var pub_date string
 		var flagged int
 
 		var user_id int
@@ -281,7 +310,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 			Email:        email,
 			Gravatar_url: gravatar_url(email, 64),
 			Username:     username,
-			Pub_date:     time.Unix(pub_date, 0).String(),
+			Pub_date:     pub_date,
 		}
 		messages = append(messages, message)
 	}
@@ -309,7 +338,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 }
 
 func add_message(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "add_message hit")
+	fmt.Println(w, "add_message hit")
 	session, err := STORE.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -330,7 +359,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		checkErr(err)
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/public", http.StatusFound)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -397,9 +426,9 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 		// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 		data.IsLoggedIn = true
 		data.Username = user.Username
-		data.RequestEndpoint = "public_timeline"
+		data.RequestEndpoint = ""
 		// tmpl.Execute(w, data)
-		http.Redirect(w, r, "/public", http.StatusFound)
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
 
