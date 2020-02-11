@@ -63,6 +63,10 @@ type RequestData struct {
 	Title           string
 	RequestEndpoint string
 	Messages        []MessageViewData
+	IsLoggedIn      bool
+	SessionUser     string
+	UserProfile     string
+	Followed        bool
 }
 
 type User struct {
@@ -151,6 +155,9 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		Title:           "title",
 		RequestEndpoint: "public_timeline",
 		Messages:        messages,
+		IsLoggedIn:      false,
+		SessionUser:     (user.(*User)).Username,
+		UserProfile:     "",
 	}
 
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
@@ -203,10 +210,12 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	follower.who_id = ? and follower.whom_id = ?`)
 	var who_id int
 	var whom_id int
+	var followed bool
 	err = stmt.QueryRow(user_id, profile_user_id).Scan(&who_id, &whom_id)
 	if err != nil && err.Error() != "sql: no rows in result set" {
-		panic(err)
+		followed = false
 	}
+	followed = true
 
 	var rows *sql.Rows = database.Query_db(`select message.*, user.* from message, user where
 	user.user_id = message.author_id and user.user_id = ?
@@ -244,6 +253,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		Title:           "title",
 		RequestEndpoint: "user_timeline",
 		Messages:        messages,
+		IsLoggedIn:      true,
+		SessionUser:     username,
+		UserProfile:     profile_username,
+		Followed:        followed,
 	}
 
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
@@ -306,11 +319,12 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 	errorMsg := ""
 	data := struct {
-		HasError   bool
-		ErrorMsg   string
-		IsLoggedIn bool
-		Username   string
-	}{false, errorMsg, false, ""}
+		HasError        bool
+		ErrorMsg        string
+		IsLoggedIn      bool
+		Username        string
+		RequestEndpoint string
+	}{false, errorMsg, false, "", ""}
 
 	username := r.FormValue("username")
 	password := r.FormValue("password")
@@ -343,7 +357,9 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 	data.IsLoggedIn = true
 	data.Username = user.Username
+	data.RequestEndpoint = "public_timeline"
 	tmpl.Execute(w, data)
+	http.Redirect(w, r, "/public_timeline", http.StatusFound)
 
 }
 
