@@ -1,6 +1,6 @@
 build:
 	go build src/minitwit.go
-	gcc src/flag_tool.c -l sqlite3 -L/opt/local/lib/ -o src/flag_tool -g
+	gcc src/flagtool/flag_tool.c -l sqlite3 -L/opt/local/lib/ -o src/flagtool/flag_tool -g
 
 start:
 	go run src/minitwit.go
