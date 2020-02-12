@@ -4,24 +4,21 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+	authentication "go/src/authentication"
 	"go/src/database"
 	"go/src/types"
 	"go/src/utils"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var DATABASE = database.ConnectDB()
-var SECRET_KEY = []byte("development key")
-var STORE = sessions.NewCookieStore(SECRET_KEY)
 var PER_PAGE = 30
 var STATIC_ROOT_PATH = "./src/static"
 
@@ -39,33 +36,17 @@ func main() {
 	)
 	gob.Register(&types.User{})
 
-	r.HandleFunc("/", timeline)
+	r.HandleFunc("/", authentication.Auth(timeline))
 	r.HandleFunc("/public", publicTimeline)
 	r.HandleFunc("/logout", logout)
-	r.HandleFunc("/addMessage", addMessage).Methods("POST")
+	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
-	r.HandleFunc("/{username}", userTimeline)
-	r.HandleFunc("/{username}/follow", followUser)
-	r.HandleFunc("/{username}/unfollow", unfollowUser)
-	// http.Handle("/", Before_request(r))
+	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
+	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
+	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
 	http.ListenAndServe(":5000", r)
 
-}
-
-func beforeRequest(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("middleware", r.URL)
-		getSession(w, r)
-	})
-}
-
-func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
-	session, err := STORE.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return session
 }
 
 func getUserID(username string) int {
@@ -92,19 +73,9 @@ func gravatarURL(email string, size int) string {
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
-	session, err := STORE.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	user := session.Values["user"]
-	fmt.Println(user)
-	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusFound)
-		return
-	}
-	user_id := (user.(*types.User)).User_id
+	user_ := authentication.GetSessionValue(w, r, "user")
+	user := user_.(*(types.User))
+	user_id := user.User_id
 	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
 	where message.flagged = 0 and message.author_id = user.user_id and (
 		user.user_id = ? or
@@ -146,29 +117,18 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := types.RequestData{
-		Title:           "title",
 		RequestEndpoint: "",
+		Title:           "title",
 		Messages:        messages,
 		IsLoggedIn:      true,
-		SessionUser:     (user.(*types.User)).Username,
+		SessionUser:     user.Username,
 		UserProfile:     "",
 	}
-
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
-
-	tmpl.Execute(w, data)
-
+	utils.RenderTemplate(w, utils.TIMELINE, data)
 }
 
 func publicTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: " + r.RemoteAddr)
-
-	session, err := STORE.Get(r, "session")
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
 	where message.flagged = 0 and message.author_id = user.user_id
@@ -201,6 +161,7 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 			Username:    username,
 			Pub_date:    pub_date,
 		}
+
 		messages = append(messages, message)
 	}
 
@@ -210,27 +171,20 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 		Messages:        messages,
 	}
 
-	user := session.Values["user"]
+	user := authentication.GetSessionValue(w, r, "user")
 	if user != nil {
 		username := (user.(*types.User)).Username
 		data.IsLoggedIn = true
 		data.SessionUser = username
 	}
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 
-	tmpl.Execute(w, data)
+	utils.RenderTemplate(w, utils.TIMELINE, data)
 }
 
 func userTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User timeline hit")
-	session, err := STORE.Get(r, "session")
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	user := session.Values["user"]
+	user := authentication.GetSessionValue(w, r, "user")
 	username := (user.(*types.User)).Username
 	user_id := (user.(*types.User)).User_id
 	// cookie, _ := r.Cookie(username)
@@ -301,11 +255,9 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 		Followed:        followed,
 	}
 
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
-
-	tmpl.Execute(w, data)
-
+	utils.RenderTemplate(w, utils.TIMELINE, data)
 }
+
 func followUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "follow_user hit")
 }
@@ -315,16 +267,8 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 
 func addMessage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(w, "addMessage hit")
-	session, err := STORE.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
-	user := session.Values["user"]
-	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusNotFound)
-	}
+	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
 	user_id := (user.(*types.User)).User_id
 
@@ -348,19 +292,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginGet(w http.ResponseWriter, r *http.Request) {
-
-	tmpl := utils.GetTemplate(utils.LOGIN)
-
-	tmpl.Execute(w, nil)
+	utils.RenderTemplate(w, utils.LOGIN, nil)
 }
 
 func loginPost(w http.ResponseWriter, r *http.Request) {
-	session, err := STORE.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	errorMsg := ""
 	data := struct {
 		HasError        bool
@@ -383,29 +318,20 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 	userFound, user := authenticate(username, password)
 
 	if !userFound {
-		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/login.html"))
 		data.HasError = true
 		data.ErrorMsg = "Cannot recognize user"
 		data.IsLoggedIn = false
-		tmpl.Execute(w, data)
+		utils.RenderTemplate(w, utils.LOGIN, data)
 		return
 	}
-
-	expiration := time.Now().Add(365 * 24 * 60)
-	cookie := http.Cookie{Name: username, Value: "hej", Expires: expiration}
-
-	session.Values["user"] = user
-	http.SetCookie(w, &cookie)
-	err = session.Save(r, w)
+	err := authentication.PutSessionValue(w, r, "user", user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	} else {
-		// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
 		data.IsLoggedIn = true
 		data.Username = user.Username
 		data.RequestEndpoint = ""
-		// tmpl.Execute(w, data)
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
@@ -439,24 +365,10 @@ func authenticate(username string, password string) (bool, *types.User) {
 
 func logout(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("logout hit")
-	session, err := STORE.Get(r, "session")
-	if err != nil {
-		fmt.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	session.AddFlash("You were logged out")
-
-	session.Options.MaxAge = -1
-	err = session.Save(r, w)
+	err := authentication.ClearSession(w, r)
 	if err != nil {
 		panic(err)
 	}
-	sessions.Save(r, w)
-
-	// tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/timeline.html"))
-	// tmpl.Execute(w, nil)
 	http.Redirect(w, r, "/public", http.StatusFound)
 
 }
@@ -475,8 +387,7 @@ func isUsernameTaken(username string) bool {
 }
 
 func registerGet(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
-	tmpl.Execute(w, nil)
+	utils.RenderTemplate(w, utils.REGISTER, nil)
 }
 
 func registerUser(username string, email string, hashedPassword string) bool {
@@ -513,13 +424,12 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if errorMsg != "" {
-		tmpl := template.Must(template.ParseFiles(STATIC_ROOT_PATH + "/templates/register.html"))
 		data := struct {
 			HasError   bool
 			ErrorMsg   string
 			IsLoggedIn bool
 		}{true, errorMsg, false}
-		tmpl.Execute(w, data)
+		utils.RenderTemplate(w, utils.REGISTER, data)
 	} else {
 		http.Redirect(w, r, "/login", http.StatusFound)
 	}

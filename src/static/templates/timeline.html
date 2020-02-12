@@ -1,25 +1,4 @@
-<!doctype html>
-<title>Welcome| MiniTwit</title>
-<head>
-  <link rel=stylesheet type=text/css href="/css/style.css">
-
-</head>
-<body>
-<div class=page>
-  <h1>MiniTwit</h1>
-  <div class=navigation>
-{{ if .IsLoggedIn }}
-    {{- $usernamepath := .SessionUser -}}
-    <a href={{$usernamepath}}>my timeline</a> |
-    <a href="/public" >public timeline</a> |
-    <a href="/logout">sign out [{{ .SessionUser }}]</a>
-{{ else }}
-    <a href="/public">public timeline</a> |
-    <a href="/register">sign up</a> |
-    <a href="/login">sign in</a href="/login">
-{{ end }}
-  </div>
-  <div class=body>
+{{ template "layout.html" . }}
 
 <h2>
   {{ if eq "timeline" .RequestEndpoint }}
@@ -30,7 +9,7 @@
     My Timeline
   {{ end }}
  </h2>
-  {{ if .IsLoggedIn }}
+  {{ if .IsLoggedIn }} 
     {{ if eq .RequestEndpoint "user_timeline" }}
       <div class=followstatus>
       {{ if eq .SessionUser .UserProfile }}
@@ -48,15 +27,13 @@
     {{ else if eq .RequestEndpoint "timeline" }}
       <div class=twitbox>
         <h3>What's on your mind {{ .SessionUser }}?</h3>
-        <form action="/add_message" method=post>
-          <p><input type=text name=text size=60><!--
-          --><input type=submit value="Share">
+        <form action="/addMessage" method=post>
+          <p><input type=text name=text size=60> 
+             <input type=submit value="Share">
         </form>
       </div>
     {{ end }}
   {{ end }}
-
-  
 
   <ul class=messages>
     {{ if gt (len .Messages) 0}}
@@ -76,10 +53,4 @@
     {{end}}
   </ul>
 
-
-</div>
-<div class=footer>
-  MiniTwit &mdash; A Golang Application
-</div>
-</div>
-</body>
+{{ template "footer.html" . }}

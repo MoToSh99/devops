@@ -1,24 +1,4 @@
-<!doctype html>
-<title>Welcome| MiniTwit</title>
-<head>
-  <link rel=stylesheet type=text/css href="/css/style.css">
-
-</head>
-<body>
-<div class=page>
-  <h1>MiniTwit</h1>
-  <div class=navigation>
-{{ if .IsLoggedIn }}
-    <a href="">my timeline</a> |
-    <a href="/public" >public timeline</a> |
-    <a href="/logout">sign out {{ .Username }}</a>
-{{ else }}
-    <a href="/public">public timeline</a> |
-    <a href="/register">sign up</a> |
-    <a href="/login">sign in</a href="/login">
-{{end}}
-  </div>
-  <div class=body>
+{{ template "layout.html" . }}
 
   <h2>Sign Up</h2>
   {{ if .HasError }}<div class=error><strong>Error:</strong> {{ .ErrorMsg }}</div>{{ end }}
@@ -36,9 +16,4 @@
     <div class=actions><input type=submit value="Sign Up"></div>
   </form>
 
-</div>
-<div class=footer>
-  MiniTwit &mdash; A Golang Application
-</div>
-</div>
-</body>
+{{ template "footer.html" . }}
