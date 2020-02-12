@@ -82,8 +82,10 @@ func getUserID(username string) int {
 	return id
 }
 
-func formatDatetime(timestamp int) {
-	//Format a timestamp for display
+func format_datetime(timestamp string) string {
+	splittedTimestamp := strings.Split(timestamp, ".")
+	time := splittedTimestamp[0]
+	return time[:16]
 }
 
 func gravatarURL(email string, size int) string {
@@ -99,7 +101,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := session.Values["user"]
-	fmt.Println(user)
+
 	if user == nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
 		return
@@ -135,12 +137,12 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
-			Username:    username,
-			Pub_date:    pub_date,
+  message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
@@ -194,12 +196,12 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
-			Username:    username,
-			Pub_date:    pub_date,
+	message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
@@ -281,12 +283,12 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
-			Username:    username,
-			Pub_date:    pub_date,
+	message := MessageViewData{
+			Text:         text,
+			Email:        email,
+			Gravatar_url: gravatar_url(email, 64),
+			Username:     username,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
