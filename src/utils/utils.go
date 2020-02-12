@@ -1,6 +1,8 @@
 package utils
 
-import "os"
+import (
+	"os"
+)
 
 // Exists reports whether the named file or directory exists.
 func FileExists(name string) bool {

@@ -186,65 +186,53 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 func userTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User timeline hit")
 
-	user := authentication.GetSessionValue(w, r, "user")
-	username := (user.(*types.User)).Username
-	user_id := (user.(*types.User)).User_id
-	// cookie, _ := r.Cookie(username)
-	// fmt.Println(w, username)
+	username := mux.Vars(r)["username"]
+
 	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
-	profile_user_id := -999
-	profile_email := ""
-	profile_pw_hash := ""
-	profile_username := ""
-	err = stmt.QueryRow(username).Scan(&profile_user_id, &profile_username, &profile_email, &profile_pw_hash)
-	if err != nil && err.Error() != "sql: no rows in result set" {
+	profile := types.User{}
+	err = stmt.QueryRow(username).Scan(&profile.User_id, &profile.Username, &profile.Email, &profile.Pw_hash)
+	if err != nil && err == sql.ErrNoRows {
 		panic(err)
 	}
 
+	user := authentication.GetSessionValue(w, r, "user")
+	user_id := (user.(*types.User)).User_id
 	stmt, err = DATABASE.Prepare(`select 1 from follower where
 	follower.who_id = ? and follower.whom_id = ?`)
-	var who_id int
-	var whom_id int
-	var followed bool
-	err = stmt.QueryRow(user_id, profile_user_id).Scan(&who_id, &whom_id)
-	if err != nil && err.Error() != "sql: no rows in result set" {
-		followed = false
+	follower := types.Follower{}
+	err = stmt.QueryRow(user_id, profile.User_id).Scan(&follower.WhoID, &follower.WhomID)
+	if err != nil && err == sql.ErrNoRows {
+		follower.Followed = false
+	} else {
+		follower.Followed = true
 	}
-	followed = true
+	fmt.Println(follower)
 
 	stmt, err = DATABASE.Prepare(`select message.*, user.* from message, user
 	where user.user_id = message.author_id and user.user_id = ? 
 	order by message.pub_date desc limit ?`)
 
-	rows, err := stmt.Query(profile_user_id, PER_PAGE)
+	rows, err := stmt.Query(profile.User_id, PER_PAGE)
 
 	messages := []types.MessageViewData{}
 	for rows.Next() {
-		var message_id int
-		var author_id int
-		var text string
-		var pub_date string
-		var flagged int
+		message := types.Message{}
+		messageUser := types.User{}
 
-		var user_id int
-		var username string
-		var email string
-		var pw_hash string
-
-		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
+		err = rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.User_id, &messageUser.Username, &messageUser.Email, &messageUser.Pw_hash)
 
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
+		messageViewData := types.MessageViewData{
+			Text:        message.Text,
+			Email:       messageUser.Email,
+			GravatarURL: gravatarURL(messageUser.Email, 64),
 			Username:    username,
-			Pub_date:    format_datetime(pub_date),
+			Pub_date:    format_datetime(message.PublishedDate),
 		}
-		messages = append(messages, message)
+		messages = append(messages, messageViewData)
 	}
 
 	data := types.RequestData{
@@ -252,17 +240,16 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 		RequestEndpoint: "userTimeline",
 		Messages:        messages,
 		IsLoggedIn:      true,
-		SessionUser:     username,
-		UserProfile:     profile_username,
-		Followed:        followed,
+		SessionUser:     (user.(*types.User)).Username,
+		UserProfile:     profile.Username,
+		Followed:        follower.Followed,
 	}
 
 	utils.RenderTemplate(w, utils.TIMELINE, data)
 }
 
 func followUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "follow_user hit")
-	username := r.FormValue("username")
+	username := mux.Vars(r)["username"]
 	userID, err := getUserID(username)
 	if err != nil {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
@@ -273,15 +260,13 @@ func followUser(w http.ResponseWriter, r *http.Request) {
 	statement, err := DATABASE.Prepare(queryString)
 	_, err = statement.Exec(sessionUserID, userID)
 	checkErr(err)
-
 	authentication.Flash(w, r, "You are now following "+username)
 
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
 func unfollowUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "unfollow_user")
-	username := r.FormValue("username")
+	username := mux.Vars(r)["username"]
 	userID, err := getUserID(username)
 	if err != nil {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
@@ -383,7 +368,7 @@ func authenticate(username string, password string) (bool, *types.User) {
 		Pw_hash:  pw_hash,
 	}
 
-	if err != nil && err.Error() != "sql: no rows in result set" {
+	if err != nil && err == sql.ErrNoRows {
 		panic(err)
 	}
 
