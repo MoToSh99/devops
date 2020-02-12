@@ -3,6 +3,7 @@ package utils
 import (
 	"html/template"
 	html "html/template"
+	"net/http"
 )
 
 const STATIC_ROOT_PATH = "./src/static"
@@ -18,4 +19,9 @@ const (
 // GetTemplate returns executable template with header and footer
 func GetTemplate(route string) *html.Template {
 	return template.Must(template.ParseFiles(route, LAYOUT, FOOTER))
+}
+
+func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {
+	tmpl := GetTemplate(route)
+	tmpl.Execute(w, data)
 }
