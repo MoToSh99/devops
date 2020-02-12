@@ -106,8 +106,11 @@ func get_user_id(username string) int {
 	return id
 }
 
-func format_datetime(timestamp int) {
-	//Format a timestamp for display
+func format_datetime(timestamp string) string {
+	splittedTimestamp := strings.Split(timestamp, ".")
+	time := splittedTimestamp[0]
+	return time[:16]
+
 }
 
 func gravatar_url(email string, size int) string {
@@ -123,7 +126,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := session.Values["user"]
-	fmt.Println(user)
+
 	if user == nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
 		return
@@ -164,7 +167,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			Email:        email,
 			Gravatar_url: gravatar_url(email, 64),
 			Username:     username,
-			Pub_date:     pub_date,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
@@ -223,7 +226,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 			Email:        email,
 			Gravatar_url: gravatar_url(email, 64),
 			Username:     username,
-			Pub_date:     pub_date,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
@@ -310,7 +313,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 			Email:        email,
 			Gravatar_url: gravatar_url(email, 64),
 			Username:     username,
-			Pub_date:     pub_date,
+			Pub_date:     format_datetime(pub_date),
 		}
 		messages = append(messages, message)
 	}
