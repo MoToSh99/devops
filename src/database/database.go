@@ -8,8 +8,9 @@ import (
 	"strings"
 )
 
-func Init_db(db *sql.DB) {
-	//Initialize the database tables
+//InitDB initialize the database tables
+func InitDB(db *sql.DB) {
+
 	file, err := os.Open("src/database/schema.sql")
 	if err != nil {
 		fmt.Println(err)
@@ -29,8 +30,8 @@ func Init_db(db *sql.DB) {
 	}
 }
 
-//Returns a new connection to the database
-func Connect_db() *sql.DB {
+//ConnectDB returns a new connection to the database
+func ConnectDB() *sql.DB {
 	connection, err := sql.Open("sqlite3", "/tmp/minitwit.db")
 	if err != nil {
 		fmt.Println(err)
@@ -38,6 +39,7 @@ func Connect_db() *sql.DB {
 	return connection
 }
 
+//ExecCommand executes sql command
 func ExecCommand(sqlCommand string, db *sql.DB) {
 	statement, err := db.Prepare(sqlCommand)
 	if err != nil {
@@ -46,8 +48,8 @@ func ExecCommand(sqlCommand string, db *sql.DB) {
 	statement.Exec()
 }
 
-func Query_db(query string, args []string, db *sql.DB) *sql.Rows {
-	//Query the database and returns a list of rows
+//QueryDB queries the database and returns a list of rows
+func QueryDB(query string, args []string, db *sql.DB) *sql.Rows {
 
 	rows, err := db.Query(query, args)
 	if err != nil {
