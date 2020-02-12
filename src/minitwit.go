@@ -49,18 +49,18 @@ func main() {
 
 }
 
-func getUserID(username string) int {
+func getUserID(username string) (int, error) {
 	//Convenience method to loop up the id for a username
 	var id int
-	var rows *sql.Rows = database.QueryDB("select user_id from user where username = ?", []string{username}, DATABASE)
+	var rows *sql.Rows = database.QueryDB("select user_id from user where username = ?", utils.StringArrayToInterfaceArray([]string{username}), DATABASE)
 	for rows.Next() {
 		err := rows.Scan(&id)
 
 		if err != nil {
-			fmt.Println(err)
+			return 0, err
 		}
 	}
-	return id
+	return id, nil
 }
 
 func format_datetime(timestamp string) string {
@@ -262,9 +262,39 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 
 func followUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "follow_user hit")
+	username := r.FormValue("username")
+	userID, err := getUserID(username)
+	if err != nil {
+		http.Redirect(w, r, "/public", http.StatusNotFound)
+	}
+	sessionUser := authentication.GetSessionValue(w, r, "user")
+	sessionUserID := (sessionUser.(*types.User)).User_id
+	queryString := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
+	statement, err := DATABASE.Prepare(queryString)
+	_, err = statement.Exec(sessionUserID, userID)
+	checkErr(err)
+
+	authentication.Flash(w, r, "You are now following "+username)
+
+	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
+
 func unfollowUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "unfollow_user")
+	username := r.FormValue("username")
+	userID, err := getUserID(username)
+	if err != nil {
+		http.Redirect(w, r, "/public", http.StatusNotFound)
+	}
+	sessionUser := authentication.GetSessionValue(w, r, "user")
+	sessionUserID := (sessionUser.(*types.User)).User_id
+	queryString := `DELETE FROM follower WHERE who_id = ? AND whom_id = ?`
+	statement, err := DATABASE.Prepare(queryString)
+	_, err = statement.Exec(sessionUserID, userID)
+	checkErr(err)
+	authentication.Flash(w, r, "You are no longer following "+username)
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func addMessage(w http.ResponseWriter, r *http.Request) {

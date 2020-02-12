@@ -11,3 +11,11 @@ func FileExists(name string) bool {
 	}
 	return true
 }
+
+func StringArrayToInterfaceArray(a []string) []interface{} {
+	b := make([]interface{}, len(a))
+	for i, s := range a {
+		b[i] = s
+	}
+	return b
+}

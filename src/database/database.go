@@ -49,9 +49,9 @@ func ExecCommand(sqlCommand string, db *sql.DB) {
 }
 
 //QueryDB queries the database and returns a list of rows
-func QueryDB(query string, args []string, db *sql.DB) *sql.Rows {
+func QueryDB(query string, args []interface{}, db *sql.DB) *sql.Rows {
 
-	rows, err := db.Query(query, args)
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		fmt.Println(err)
 	}
