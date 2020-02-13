@@ -17,7 +17,6 @@ var db = ConnectDB()
 
 //InitDB initialize the database tables
 func InitDB() {
-
 	file, err := os.Open("src/database/schema.sql")
 	if err != nil {
 		fmt.Println(err)
@@ -84,17 +83,17 @@ func QueryMessages(query string, args ...interface{}) []types.MessageViewData {
 		message := types.Message{}
 		messageUser := types.User{}
 
-		err := rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.User_id, &messageUser.Username, &messageUser.Email, &messageUser.Pw_hash)
+		err := rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.UserID, &messageUser.Username, &messageUser.Email, &messageUser.PasswordHash)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		messageViewData := types.MessageViewData{
-			Text:        message.Text,
-			Email:       messageUser.Email,
-			GravatarURL: utils.GravatarURL(messageUser.Email, 48),
-			Username:    messageUser.Username,
-			Pub_date:    utils.Format_datetime(message.PublishedDate),
+			Text:          message.Text,
+			Email:         messageUser.Email,
+			GravatarURL:   utils.GravatarURL(messageUser.Email, 48),
+			Username:      messageUser.Username,
+			PublishedDate: utils.FormatDatetime(message.PublishedDate),
 		}
 		messages = append(messages, messageViewData)
 	}

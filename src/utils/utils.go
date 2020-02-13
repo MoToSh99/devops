@@ -26,7 +26,7 @@ func StringArrayToInterfaceArray(a []string) []interface{} {
 	return b
 }
 
-func Format_datetime(timestamp string) string {
+func FormatDatetime(timestamp string) string {
 	splittedTimestamp := strings.Split(timestamp, ".")
 	time := splittedTimestamp[0]
 	return time[:16]

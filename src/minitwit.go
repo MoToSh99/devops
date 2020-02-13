@@ -62,16 +62,15 @@ func getUserID(username string) (int, error) {
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
-	user_ := authentication.GetSessionValue(w, r, "user")
-	user := user_.(*(types.User))
-	user_id := user.User_id
+	user := authentication.GetSessionValue(w, r, "user").(*(types.User))
+	userID := user.UserID
 
 	messages := database.QueryMessages(`select message.*, user.* from message, user
 	where message.flagged = 0 and message.author_id = user.user_id and (
 		user.user_id = ? or
 		user.user_id in (select whom_id from follower
 								where who_id = ?))
-	order by message.pub_date desc limit ?`, user_id, user_id, PER_PAGE)
+	order by message.pub_date desc limit ?`, userID, userID, PER_PAGE)
 
 	data := types.RequestData{
 		RequestEndpoint: "",
@@ -113,15 +112,15 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 	username := mux.Vars(r)["username"]
 	profile := types.User{}
 
-	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&profile.User_id, &profile.Username, &profile.Email, &profile.Pw_hash)
+	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&profile.UserID, &profile.Username, &profile.Email, &profile.PasswordHash)
 	if err != nil && err == sql.ErrNoRows {
 		panic(err)
 	}
 	user := authentication.GetSessionValue(w, r, "user")
-	user_id := (user.(*types.User)).User_id
+	userID := (user.(*types.User)).UserID
 	follower := types.Follower{}
 	err = database.QueryRowDB(`select 1 from follower where
-	follower.who_id = ? and follower.whom_id = ?`, user_id, profile.User_id).Scan(&follower.WhoID, &follower.WhomID)
+	follower.who_id = ? and follower.whom_id = ?`, userID, profile.UserID).Scan(&follower.WhoID, &follower.WhomID)
 	if err != nil && err == sql.ErrNoRows {
 		follower.Followed = false
 	} else {
@@ -130,7 +129,7 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 
 	messages := database.QueryMessages(`select message.*, user.* from message, user
 	where user.user_id = message.author_id and user.user_id = ? 
-	order by message.pub_date desc limit ?`, profile.User_id, PER_PAGE)
+	order by message.pub_date desc limit ?`, profile.UserID, PER_PAGE)
 
 	data := types.RequestData{
 		Title:           "title",
@@ -152,7 +151,7 @@ func followUser(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
-	sessionUserID := (sessionUser.(*types.User)).User_id
+	sessionUserID := (sessionUser.(*types.User)).UserID
 	err = database.AlterDB(`INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`, sessionUserID, userID)
 	checkErr(err)
 	authentication.Flash(w, r, "You are now following "+username)
@@ -167,7 +166,7 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
-	sessionUserID := (sessionUser.(*types.User)).User_id
+	sessionUserID := (sessionUser.(*types.User)).UserID
 	err = database.AlterDB(`DELETE FROM follower WHERE who_id = ? AND whom_id = ?`, sessionUserID, userID)
 	checkErr(err)
 	authentication.Flash(w, r, "You are no longer following "+username)
@@ -176,14 +175,14 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func addMessage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(w, "addMessage hit")
+	fmt.Println("addMessage hit")
 
 	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
-	user_id := (user.(*types.User)).User_id
+	userID := (user.(*types.User)).UserID
 
 	if text != "" {
-		err := database.AlterDB(`INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`, user_id, text, time.Now())
+		err := database.AlterDB(`INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`, userID, text, time.Now())
 		checkErr(err)
 	}
 
@@ -245,28 +244,19 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func authenticate(username string, password string) (bool, *types.User) {
-	user_id := -999
-	email := ""
-	pw_hash := ""
-	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&user_id, &username, &email, &pw_hash)
+	user := &types.User{}
 
-	user := &types.User{
-		User_id:  user_id,
-		Username: username,
-		Email:    email,
-		Pw_hash:  pw_hash,
-	}
+	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&user.UserID, &user.Username, &user.Email, &user.PasswordHash)
 
 	if err != nil && err == sql.ErrNoRows {
 		panic(err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(pw_hash), []byte(password))
-	if user_id == -999 || pw_hash == "" || err != nil {
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
 		return false, nil
 	}
 	return true, user
-
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
