@@ -1,4 +1,3 @@
-
                         / MiniTwit /
 
     ~ What is MiniTwit?
@@ -18,3 +17,23 @@
 
       At the moment the solution is only tested manually. 
       Hence no automated testing.
+
+----------------------------------------------------------------
+
+Following commands should be run in the terminal:
+
+To get the newest go version:
+
+```sudo snap install --classic go```
+
+
+To install all project dependencies:
+
+```make install```
+
+To build and run the project:
+```make build && make start```
+
+
+To add go as environment variable:
+export PATH=$PATH:/usr/local/go/bin
