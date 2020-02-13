@@ -23,6 +23,7 @@
 Følgende commands køres i terminalen;
 
 For at hente nyeste version:
+
 ```sudo snap install --classic go```
 
 
