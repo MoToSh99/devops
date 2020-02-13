@@ -1,16 +1,13 @@
 package main
 
 import (
-	"crypto/md5"
 	"database/sql"
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	authentication "go/src/authentication"
 	"go/src/database"
 	"go/src/types"
 	"go/src/utils"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -20,7 +17,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var DATABASE = database.ConnectDB()
 var PER_PAGE = 30
 var STATIC_ROOT_PATH = "./src/static"
 
@@ -29,7 +25,7 @@ func main() {
 	// Init DB if it doesn't exist
 	if !utils.FileExists("/tmp/minitwit.db") {
 		fmt.Println("Initializing database")
-		database.InitDB(DATABASE)
+		database.InitDB()
 	}
 	fmt.Println("Running: localhost:5000/public")
 	r := mux.NewRouter()
@@ -54,7 +50,7 @@ func main() {
 func getUserID(username string) (int, error) {
 	//Convenience method to loop up the id for a username
 	var id int
-	var rows *sql.Rows = database.QueryDB("select user_id from user where username = ?", utils.StringArrayToInterfaceArray([]string{username}), DATABASE)
+	var rows *sql.Rows = database.QueryRowsDB("select user_id from user where username = ?", username)
 	for rows.Next() {
 		err := rows.Scan(&id)
 
@@ -65,62 +61,17 @@ func getUserID(username string) (int, error) {
 	return id, nil
 }
 
-func format_datetime(timestamp string) string {
-	splittedTimestamp := strings.Split(timestamp, ".")
-	time := splittedTimestamp[0]
-	return time[:16]
-}
-
-func gravatarURL(email string, size int) string {
-	cleanedEmail := strings.ToLower(strings.TrimSpace(email))
-	hash := md5.Sum([]byte(cleanedEmail))
-	hex := hex.EncodeToString(hash[:])
-	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", hex, size)
-}
-
 func timeline(w http.ResponseWriter, r *http.Request) {
 	user_ := authentication.GetSessionValue(w, r, "user")
 	user := user_.(*(types.User))
 	user_id := user.User_id
-	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
+
+	messages := database.QueryMessages(`select message.*, user.* from message, user
 	where message.flagged = 0 and message.author_id = user.user_id and (
 		user.user_id = ? or
 		user.user_id in (select whom_id from follower
 								where who_id = ?))
-	order by message.pub_date desc limit ?`)
-	rows, err := stmt.Query(user_id, user_id, PER_PAGE)
-	if err != nil {
-		http.Redirect(w, r, "/public", http.StatusForbidden)
-	}
-
-	messages := []types.MessageViewData{}
-
-	for rows.Next() {
-		var message_id int
-		var author_id int
-		var text string
-		var pub_date string
-		var flagged int
-
-		var user_id int
-		var username string
-		var email string
-		var pw_hash string
-
-		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 48),
-			Username:    username,
-			Pub_date:    format_datetime(pub_date),
-		}
-		messages = append(messages, message)
-	}
+	order by message.pub_date desc limit ?`, user_id, user_id, PER_PAGE)
 
 	data := types.RequestData{
 		RequestEndpoint: "",
@@ -136,40 +87,9 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 func publicTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: " + r.RemoteAddr)
 
-	stmt, err := DATABASE.Prepare(`select message.*, user.* from message, user
+	messages := database.QueryMessages(`select message.*, user.* from message, user
 	where message.flagged = 0 and message.author_id = user.user_id
-	order by message.pub_date desc limit ?`)
-	rows, err := stmt.Query(PER_PAGE)
-
-	messages := []types.MessageViewData{}
-
-	for rows.Next() {
-		var message_id int
-		var author_id int
-		var text string
-		var pub_date string
-		var flagged int
-
-		var user_id int
-		var username string
-		var email string
-		var pw_hash string
-
-		err = rows.Scan(&message_id, &author_id, &text, &pub_date, &flagged, &user_id, &username, &email, &pw_hash)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		message := types.MessageViewData{
-			Text:        text,
-			Email:       email,
-			GravatarURL: gravatarURL(email, 48),
-			Username:    username,
-			Pub_date:    format_datetime(pub_date),
-		}
-
-		messages = append(messages, message)
-	}
+	order by message.pub_date desc limit ?`, PER_PAGE)
 
 	data := types.RequestData{
 		Title:           "MEGA TITLE",
@@ -191,53 +111,26 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User timeline hit")
 
 	username := mux.Vars(r)["username"]
-
-	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
 	profile := types.User{}
-	err = stmt.QueryRow(username).Scan(&profile.User_id, &profile.Username, &profile.Email, &profile.Pw_hash)
+
+	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&profile.User_id, &profile.Username, &profile.Email, &profile.Pw_hash)
 	if err != nil && err == sql.ErrNoRows {
 		panic(err)
 	}
-
 	user := authentication.GetSessionValue(w, r, "user")
 	user_id := (user.(*types.User)).User_id
-	stmt, err = DATABASE.Prepare(`select 1 from follower where
-	follower.who_id = ? and follower.whom_id = ?`)
 	follower := types.Follower{}
-	err = stmt.QueryRow(user_id, profile.User_id).Scan(&follower.WhoID, &follower.WhomID)
+	err = database.QueryRowDB(`select 1 from follower where
+	follower.who_id = ? and follower.whom_id = ?`, user_id, profile.User_id).Scan(&follower.WhoID, &follower.WhomID)
 	if err != nil && err == sql.ErrNoRows {
 		follower.Followed = false
 	} else {
 		follower.Followed = true
 	}
-	fmt.Println(follower)
 
-	stmt, err = DATABASE.Prepare(`select message.*, user.* from message, user
+	messages := database.QueryMessages(`select message.*, user.* from message, user
 	where user.user_id = message.author_id and user.user_id = ? 
-	order by message.pub_date desc limit ?`)
-
-	rows, err := stmt.Query(profile.User_id, PER_PAGE)
-
-	messages := []types.MessageViewData{}
-	for rows.Next() {
-		message := types.Message{}
-		messageUser := types.User{}
-
-		err = rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.User_id, &messageUser.Username, &messageUser.Email, &messageUser.Pw_hash)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		messageViewData := types.MessageViewData{
-			Text:        message.Text,
-			Email:       messageUser.Email,
-			GravatarURL: gravatarURL(messageUser.Email, 48),
-			Username:    username,
-			Pub_date:    format_datetime(message.PublishedDate),
-		}
-		messages = append(messages, messageViewData)
-	}
+	order by message.pub_date desc limit ?`, profile.User_id, PER_PAGE)
 
 	data := types.RequestData{
 		Title:           "title",
@@ -260,9 +153,7 @@ func followUser(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
 	sessionUserID := (sessionUser.(*types.User)).User_id
-	queryString := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-	statement, err := DATABASE.Prepare(queryString)
-	_, err = statement.Exec(sessionUserID, userID)
+	err = database.AlterDB(`INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`, sessionUserID, userID)
 	checkErr(err)
 	authentication.Flash(w, r, "You are now following "+username)
 
@@ -277,9 +168,7 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
 	sessionUserID := (sessionUser.(*types.User)).User_id
-	queryString := `DELETE FROM follower WHERE who_id = ? AND whom_id = ?`
-	statement, err := DATABASE.Prepare(queryString)
-	_, err = statement.Exec(sessionUserID, userID)
+	err = database.AlterDB(`DELETE FROM follower WHERE who_id = ? AND whom_id = ?`, sessionUserID, userID)
 	checkErr(err)
 	authentication.Flash(w, r, "You are no longer following "+username)
 
@@ -294,9 +183,7 @@ func addMessage(w http.ResponseWriter, r *http.Request) {
 	user_id := (user.(*types.User)).User_id
 
 	if text != "" {
-		queryString := `INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`
-		statement, err := DATABASE.Prepare(queryString)
-		_, err = statement.Exec(user_id, text, time.Now())
+		err := database.AlterDB(`INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`, user_id, text, time.Now())
 		checkErr(err)
 	}
 
@@ -358,12 +245,10 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func authenticate(username string, password string) (bool, *types.User) {
-
-	stmt, err := DATABASE.Prepare("SELECT * FROM user WHERE username = ?")
 	user_id := -999
 	email := ""
 	pw_hash := ""
-	err = stmt.QueryRow(username).Scan(&user_id, &username, &email, &pw_hash)
+	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&user_id, &username, &email, &pw_hash)
 
 	user := &types.User{
 		User_id:  user_id,
@@ -404,6 +289,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 }
 
 func isUsernameTaken(username string) bool {
+	//TODO:
 	return false
 }
 
@@ -412,9 +298,7 @@ func registerGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerUser(username string, email string, hashedPassword string) bool {
-	queryString := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
-	statement, err := DATABASE.Prepare(queryString)
-	_, err = statement.Exec(username, email, hashedPassword)
+	err := database.AlterDB("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
 	checkErr(err)
 
 	return true

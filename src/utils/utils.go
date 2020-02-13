@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"os"
+	"strings"
 )
 
 // Exists reports whether the named file or directory exists.
@@ -20,4 +24,17 @@ func StringArrayToInterfaceArray(a []string) []interface{} {
 		b[i] = s
 	}
 	return b
+}
+
+func Format_datetime(timestamp string) string {
+	splittedTimestamp := strings.Split(timestamp, ".")
+	time := splittedTimestamp[0]
+	return time[:16]
+}
+
+func GravatarURL(email string, size int) string {
+	cleanedEmail := strings.ToLower(strings.TrimSpace(email))
+	hash := md5.Sum([]byte(cleanedEmail))
+	hex := hex.EncodeToString(hash[:])
+	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", hex, size)
 }
