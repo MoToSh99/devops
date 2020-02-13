@@ -1,18 +1,23 @@
+install:
+	go install ./src/minitwit.go
+
+
+#No need to build minitwit...
 build:
-	go build src/minitwit.go
-	gcc src/flagtool/flag_tool.c -l sqlite3 -L/opt/local/lib/ -o flag_tool -g
+	go build -o bin/minitwit src/minitwit.go
+	gcc src/flagtool/flag_tool.c -l sqlite3 -L/opt/local/lib/ -o bin/flag_tool -g
 
 
 start:
-	go run src/minitwit.go
+	go run ./src/minitwit.go
 
 clean:
-	rm flag_tool
-	rm src/minitwit
+	rm ./bin/flag_tool
+	rm ./bin/minitwit
 
 
 inspectdb:
-	./flag_tool -i | less
+	./bin/flag_tool -i | less
 
 flag:
-	./lag_tool "$@"
+	./bin/flag_tool "$@"

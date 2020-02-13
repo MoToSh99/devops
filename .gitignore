@@ -51,11 +51,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-#minitwit
-minitwit
-
-#flagtool
-src/flag_tool
+#bin folder
+bin/
 
 #visual code
 .vscode/

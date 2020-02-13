@@ -20,17 +20,20 @@
 
 ----------------------------------------------------------------
 
-Følgende commands køres i terminalen;
+Following commands should be run in the terminal:
 
-For at hente nyeste version:
+To get the newest go version:
 
 ```sudo snap install --classic go```
 
 
-For at compile og køre projektet bruges Makefile'en.
-Dette installerer også alle nødvendige pakker:
+To install all project dependencies:
+
+```make install```
+
+To build and run the project:
 ```make build && make start```
 
 
-Tilføj til miljøvariabler:
+To add go as environment variable:
 export PATH=$PATH:/usr/local/go/bin
