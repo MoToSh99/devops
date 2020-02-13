@@ -4,13 +4,19 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
+	"go/src/types"
+	"go/src/utils"
+	"log"
 	"os"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-//InitDB initialize the database tables
-func InitDB(db *sql.DB) {
+var db = ConnectDB()
 
+//InitDB initialize the database tables
+func InitDB() {
 	file, err := os.Open("src/database/schema.sql")
 	if err != nil {
 		fmt.Println(err)
@@ -24,7 +30,7 @@ func InitDB(db *sql.DB) {
 		currentLine = scanner.Text()
 		statement = statement + currentLine
 		if strings.Contains(currentLine, ";") {
-			ExecCommand(statement, db)
+			ExecCommand(statement)
 			statement = "" //Reset statement string
 		}
 	}
@@ -40,7 +46,7 @@ func ConnectDB() *sql.DB {
 }
 
 //ExecCommand executes sql command
-func ExecCommand(sqlCommand string, db *sql.DB) {
+func ExecCommand(sqlCommand string) {
 	statement, err := db.Prepare(sqlCommand)
 	if err != nil {
 		fmt.Println(err)
@@ -49,12 +55,47 @@ func ExecCommand(sqlCommand string, db *sql.DB) {
 }
 
 //QueryDB queries the database and returns a list of rows
-func QueryDB(query string, args []string, db *sql.DB) *sql.Rows {
+func QueryRowDB(query string, args ...interface{}) *sql.Row {
+	return db.QueryRow(query, args...) //automatically preparing
+}
 
-	rows, err := db.Query(query, args)
+//QueryDB queries the database and returns a list of rows
+func QueryRowsDB(query string, args ...interface{}) *sql.Rows {
+	rows, err := db.Query(query, args...) //automatically preparing
 	if err != nil {
 		fmt.Println(err)
 	}
 	return rows
+}
 
+func AlterDB(query string, args ...interface{}) error {
+	statement, err := db.Prepare(query)
+	_, err = statement.Exec(args...)
+	return err
+}
+
+func QueryMessages(query string, args ...interface{}) []types.MessageViewData {
+	rows := QueryRowsDB(query, args...)
+
+	messages := []types.MessageViewData{}
+
+	for rows.Next() {
+		message := types.Message{}
+		messageUser := types.User{}
+
+		err := rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.UserID, &messageUser.Username, &messageUser.Email, &messageUser.PasswordHash)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		messageViewData := types.MessageViewData{
+			Text:          message.Text,
+			Email:         messageUser.Email,
+			GravatarURL:   utils.GravatarURL(messageUser.Email, 48),
+			Username:      messageUser.Username,
+			PublishedDate: utils.FormatDatetime(message.PublishedDate),
+		}
+		messages = append(messages, messageViewData)
+	}
+	return messages
 }

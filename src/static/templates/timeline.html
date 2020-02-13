@@ -3,25 +3,23 @@
 <h2>
   {{ if eq "timeline" .RequestEndpoint }}
     Public Timeline
-  {{ else if eq "user_timeline" .RequestEndpoint }}
-    {{ .SessionUser }}'s Timeline
+  {{ else if eq "userTimeline" .RequestEndpoint }}
+    {{ .UserProfile }}'s Timeline
   {{ else }}
     My Timeline
   {{ end }}
  </h2>
   {{ if .IsLoggedIn }} 
-    {{ if eq .RequestEndpoint "user_timeline" }}
+    {{ if eq .RequestEndpoint "userTimeline" }}
       <div class=followstatus>
       {{ if eq .SessionUser .UserProfile }}
         This is you!
       {{ else if .Followed }}
         You are currently following this user.
-        <a class=unfollow href="/{{.UserProfile}}/unfollow, username=.UserProfile)
-          }}">Unfollow user</a>.
+        <a class=unfollow href="/{{.UserProfile}}/unfollow">Unfollow user</a>.
       {{ else }}
         You are not yet following this user.
-        <a class=follow href="/{{.SessionUser}}/follow, username=.SessionUser)
-          }}">Follow user</a>.
+        <a class=follow href="/{{.UserProfile}}/follow">Follow user</a>.
       {{ end }}
       </div>
     {{ else if eq .RequestEndpoint "timeline" }}
@@ -39,13 +37,12 @@
     {{ if gt (len .Messages) 0}}
       {{range .Messages}}
         <li>
-          {{/* <img src={{.gravatar_url}}> */}}
+          <img src={{.GravatarURL}}>
           <strong>
-            {{/*<a href="{{ url_for('user_timeline', username=message.username)}}">{{ message.username }}</a>*/}}
-            <a href="">{{ .Username }}</a>
+            <a href="/{{ .Username }}">{{ .Username }}</a>
           </strong>
           {{ .Text }}
-          <small>&mdash; {{ .Pub_date}}</small>
+          <small>&mdash; {{ .PublishedDate}}</small>
         </li>
       {{end}}
     {{else}}

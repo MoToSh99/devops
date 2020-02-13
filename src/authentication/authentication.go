@@ -45,3 +45,8 @@ func ClearSession(w http.ResponseWriter, r *http.Request) error {
 	session.Options.MaxAge = -1
 	return session.Save(r, w)
 }
+
+func Flash(w http.ResponseWriter, r *http.Request, msg string) {
+	session := getSession(w, r)
+	session.AddFlash(msg)
+}
