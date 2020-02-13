@@ -37,7 +37,7 @@
     {{ if gt (len .Messages) 0}}
       {{range .Messages}}
         <li>
-          {{/* <img src={{.gravatar_url}}> */}}
+          <img src={{.GravatarURL}}>
           <strong>
             <a href="/{{ .Username }}">{{ .Username }}</a>
           </strong>

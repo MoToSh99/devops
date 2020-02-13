@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/md5"
 	"database/sql"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	authentication "go/src/authentication"
 	"go/src/database"
@@ -70,8 +72,10 @@ func format_datetime(timestamp string) string {
 }
 
 func gravatarURL(email string, size int) string {
-	//Return the gravatar image for the given email address
-	return email
+	cleanedEmail := strings.ToLower(strings.TrimSpace(email))
+	hash := md5.Sum([]byte(cleanedEmail))
+	hex := hex.EncodeToString(hash[:])
+	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", hex, size)
 }
 
 func timeline(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +115,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		message := types.MessageViewData{
 			Text:        text,
 			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
+			GravatarURL: gravatarURL(email, 48),
 			Username:    username,
 			Pub_date:    format_datetime(pub_date),
 		}
@@ -159,7 +163,7 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 		message := types.MessageViewData{
 			Text:        text,
 			Email:       email,
-			GravatarURL: gravatarURL(email, 64),
+			GravatarURL: gravatarURL(email, 48),
 			Username:    username,
 			Pub_date:    format_datetime(pub_date),
 		}
@@ -228,7 +232,7 @@ func userTimeline(w http.ResponseWriter, r *http.Request) {
 		messageViewData := types.MessageViewData{
 			Text:        message.Text,
 			Email:       messageUser.Email,
-			GravatarURL: gravatarURL(messageUser.Email, 64),
+			GravatarURL: gravatarURL(messageUser.Email, 48),
 			Username:    username,
 			Pub_date:    format_datetime(message.PublishedDate),
 		}
