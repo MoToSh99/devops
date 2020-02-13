@@ -1,26 +1,35 @@
-
                         / MiniTwit /
-
-           because writing todo lists is not fun
-
 
     ~ What is MiniTwit?
 
-      A SQLite and Flask powered twitter clone
+      A SQLite and Gorilla powered twitter clone written in Golang
 
     ~ How do I use it?
+    
+      Use the Makefile to build and run the solution. Hence:
+      
+      make build && make start
 
-      1. edit the configuration in the minitwit.py file
-
-      2. fire up a python shell and run this:
-
-         >>> from minitwit import init_db; init_db()
-
-      3. now you can run the minitwit.py file with your
-         python interpreter and the application will
-         greet you on http://localhost:5000/
+      When up and running, the application will greet
+      you on http://localhost:5000/
 	
     ~ Is it tested?
 
-      You betcha.  Run the `minitwit_tests.py` file to
-      see the tests pass.
+      At the moment the solution is only tested manually. 
+      Hence no automated testing.
+
+----------------------------------------------------------------
+
+Følgende commands køres i terminalen;
+
+For at hente nyeste version:
+```sudo snap install --classic go```
+
+
+For at compile og køre projektet bruges Makefile'en.
+Dette installerer også alle nødvendige pakker:
+```make build && make start```
+
+
+Tilføj til miljøvariabler:
+export PATH=$PATH:/usr/local/go/bin
