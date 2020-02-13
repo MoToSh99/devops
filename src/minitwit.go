@@ -278,8 +278,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func isUsernameTaken(username string) bool {
-	//TODO:
+func isUsernameAvailable(username string) bool {
+	user := types.User{}
+	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&user.UserID, &user.Username, &user.Email, &user.PasswordHash)
+	if err != nil {
+		return true
+	}
 	return false
 }
 
@@ -311,7 +315,7 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = "You have to enter a password"
 	} else if r.FormValue("password") != r.FormValue("password2") {
 		errorMsg = "The two passwords do not match"
-	} else if isUsernameTaken(r.FormValue("username")) {
+	} else if !isUsernameAvailable(r.FormValue("username")) {
 		errorMsg = "The username is already taken"
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
