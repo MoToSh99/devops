@@ -248,10 +248,6 @@ func authenticate(username string, password string) (bool, *types.User) {
 
 	err := database.QueryRowDB("SELECT * FROM user WHERE username = ?", username).Scan(&user.UserID, &user.Username, &user.Email, &user.PasswordHash)
 
-	if err != nil && err == sql.ErrNoRows {
-		panic(err)
-	}
-
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return false, nil
