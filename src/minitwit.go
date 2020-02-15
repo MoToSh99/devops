@@ -45,6 +45,8 @@ func main() {
 	r.HandleFunc("/register", register).Methods("GET", "POST")
 	r.HandleFunc("/msgs", tweetsGet).Methods("Get")
 	r.HandleFunc("/msgs/{username}", tweetsUsername).Methods("GET", "POST")
+	r.HandleFunc("/fllws/{username}", followUsername).Methods("GET", "POST")
+	r.HandleFunc("/latest", latest).Methods("GET")
 	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
@@ -312,15 +314,14 @@ func checkErr(err error) {
 
 func registerPost(w http.ResponseWriter, r *http.Request) {
 	errorMsg := ""
-	fmt.Println(r.Form)
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	decoder.Decode(&registerRequest)
 	if registerRequest != (types.RegisterRequest{}) {
 		registerPostFromJson(w, r, registerRequest)
+		return
 	}
 
-	fmt.Println(r.FormValue("username"))
 	if r.FormValue("username") == "" {
 		errorMsg = "You have to enter a username"
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
@@ -349,16 +350,48 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
-	var res = registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
-	if res {
-		http.Redirect(w, r, "/login", http.StatusNoContent)
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	if latest_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+	LATEST = latest
+	error := ""
+	if registerRequest.Username == "" {
+		error = "You have to enter a username"
+	} else if registerRequest.Email == "" || !strings.Contains(registerRequest.Email, "@") {
+		error = "You have to enter a valid email address"
+	} else if registerRequest.Pwd == "" {
+		error = "You have to enter a password"
+	} else if !isUsernameAvailable(registerRequest.Username) {
+		error = "The username is already taken"
+	}
+	if error != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, Error_msg: error})
+		return
+	} else {
+		res := registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
+		if res {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func getUserIDFromUrl(r *http.Request) (int, error) {
+	username := mux.Vars(r)["username"]
+	return getUserID(username)
 }
 
 func tweetsGet(w http.ResponseWriter, r *http.Request) {
-	latest, err1 := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-	no_msgs, err2 := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
-	if err1 != nil || err2 != nil {
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if latest_err != nil || no_msgs_err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
@@ -384,16 +417,16 @@ func tweetsUsername(w http.ResponseWriter, r *http.Request) {
 
 func tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-	no_msgs, no_msgs_err2 := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 
-	if latest_err != nil || no_msgs_err2 != nil {
+	if latest_err != nil || no_msgs_err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	username := mux.Vars(r)["username"]
-	userID, userID_err := getUserID(username)
+	userID, userID_err := getUserIDFromUrl(r)
 	if userID_err != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	} else {
 
 		LATEST = latest
@@ -409,10 +442,10 @@ func tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
-	username := mux.Vars(r)["username"]
-	userID, userID_err := getUserID(username)
+	userID, userID_err := getUserIDFromUrl(r)
 	if userID_err != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -420,12 +453,101 @@ func tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
 	tweet_err := decoder.Decode(&tweet)
 	if tweet_err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	} else {
 		err := database.AlterDB(`INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`, userID, tweet.Content, time.Now())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
 
+func followUsername(w http.ResponseWriter, r *http.Request) {
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+
+	if latest_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	LATEST = latest
+	userID, userID_err := getUserIDFromUrl(r)
+	if userID_err != nil || userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if r.Method == "GET" {
+		followUsernameGet(w, r, userID)
+	} else if r.Method == "POST" {
+		decoder := json.NewDecoder(r.Body)
+		var followRequest types.FollowRequest
+		decoder.Decode(&followRequest)
+		if followRequest.Follow == "" && followRequest.Unfollow == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		isFollow := followRequest.Follow != ""
+		if isFollow {
+			followUsernamePost(w, r, userID, followRequest)
+		} else {
+			fmt.Println(followRequest)
+			unFollowUsernamePost(w, r, userID, followRequest)
+		}
+	}
+}
+
+func followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
+	no_followers, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if no_msgs_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, userID_err := getUserIDFromUrl(r)
+	if userID_err != nil || userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	followers := database.QueryFollowers(`SELECT user.username FROM user
+										INNER JOIN follower ON follower.whom_id=user.user_id
+										WHERE follower.who_id=?
+										LIMIT ?`, userID, no_followers)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(followers)
+}
+
+func followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
+	follows_userID, follows_user_err := getUserID(followRequest.Follow)
+	if follows_user_err != nil || follows_userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		follow_insert_err := database.AlterDB(`INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`, userID, follows_userID)
+		if follow_insert_err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
+	unfollows_userID, unfollows_user_err := getUserID(unfollowRequest.Unfollow)
+	if unfollows_user_err != nil || unfollows_userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		unfollow_err := database.AlterDB(`DELETE FROM follower WHERE who_id = ? AND whom_id = ?`, userID, unfollows_userID)
+		if unfollow_err != unfollow_err {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func latest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(types.LatestResponse{Latest: LATEST})
 }
