@@ -32,14 +32,17 @@ func main() {
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
 	)
+	r.PathPrefix("/templates/").Handler(
+		http.StripPrefix("/templates/", http.FileServer(http.Dir("src/static/templates/"))),
+	)
 	gob.Register(&types.User{})
 
 	r.HandleFunc("/", authentication.Auth(timeline))
 	r.HandleFunc("/public", publicTimeline)
 	r.HandleFunc("/logout", logout)
-	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
-	r.HandleFunc("/login", login).Methods("GET", "POST")
-	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/addMessage", authentication.Auth(AddMessage)).Methods("POST")
+	r.HandleFunc("/login", Login).Methods("GET", "POST")
+	r.HandleFunc("/register", Register).Methods("GET", "POST")
 	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
@@ -174,8 +177,7 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func addMessage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("addMessage hit")
+func AddMessage(w http.ResponseWriter, r *http.Request) {
 
 	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
@@ -189,7 +191,7 @@ func addMessage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/public", http.StatusFound)
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		loginGet(w, r)
 	} else if r.Method == "POST" {
@@ -269,7 +271,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func register(w http.ResponseWriter, r *http.Request) {
+func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		registerGet(w, r)
 	} else if r.Method == "POST" {
