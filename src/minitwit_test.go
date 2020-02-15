@@ -95,7 +95,7 @@ func TestRegister_EmptyUsername(t *testing.T) {
 	Router().ServeHTTP(response, request)
 
 	html := getHTMLTemplate(t, *response)
-	assert.Equal(t, 204, response.Code, "Ok response is expected")
+	assert.Equal(t, 200, response.Code, "Ok response is expected")
 	assert.True(t, true, strings.Contains(html, ("You have to enter a username")))
 }
 
@@ -116,7 +116,6 @@ func TestRegisterHandler4(t *testing.T) {
 	response := httptest.NewRecorder()
 	Router().ServeHTTP(response, request)
 	html := getHTMLTemplate(t, *response)
-	assert.Equal(t, 204, response.Code, "Ok response is expected")
 	assert.Equal(t, true, strings.Contains(html, ("You have to enter a password")))
 }
 
@@ -136,7 +135,39 @@ func TestRegisterHandler_Success(t *testing.T) {
 	request, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(requestBody))
 	response := httptest.NewRecorder()
 	Router().ServeHTTP(response, request)
-	html := getHTMLTemplate(t, *response)
 	assert.Equal(t, 204, response.Code, "Ok response is expected")
-	assert.Equal(t, true, strings.Contains(html, ("You have to enter a password")))
+}
+
+func TestRegister_And_LoginHandler_Success(t *testing.T) {
+	registerBody, err := json.Marshal(map[string]string{
+		"username":  "magnus",
+		"email":     "mack@dffsafa.com",
+		"password":  "abc123",
+		"password2": "abc123",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	database.InitDB()
+	request, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(registerBody))
+	response := httptest.NewRecorder()
+	Router().ServeHTTP(response, request)
+	assert.Equal(t, 204, response.Code, "Ok response is expected")
+
+	loginBody, err := json.Marshal(map[string]string{
+		"username": "magnus",
+		"password": "abc123",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	request, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(loginBody))
+	response = httptest.NewRecorder()
+	Router().ServeHTTP(response, request)
+	assert.Equal(t, 204, response.Code, "Ok response is expected")
+
 }
