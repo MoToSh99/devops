@@ -32,9 +32,6 @@ func main() {
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
 	)
-	r.PathPrefix("/templates/").Handler(
-		http.StripPrefix("/templates/", http.FileServer(http.Dir("src/static/templates/"))),
-	)
 	gob.Register(&types.User{})
 
 	r.HandleFunc("/", authentication.Auth(timeline))
