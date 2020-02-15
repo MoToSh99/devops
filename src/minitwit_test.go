@@ -119,3 +119,24 @@ func TestRegisterHandler4(t *testing.T) {
 	assert.Equal(t, 204, response.Code, "Ok response is expected")
 	assert.Equal(t, true, strings.Contains(html, ("You have to enter a password")))
 }
+
+func TestRegisterHandler_Success(t *testing.T) {
+	requestBody, err := json.Marshal(map[string]string{
+		"username":  "magnus",
+		"email":     "mack@dffsafa.com",
+		"password":  "abc123",
+		"password2": "abc123",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	database.InitDB()
+	request, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(requestBody))
+	response := httptest.NewRecorder()
+	Router().ServeHTTP(response, request)
+	html := getHTMLTemplate(t, *response)
+	assert.Equal(t, 204, response.Code, "Ok response is expected")
+	assert.Equal(t, true, strings.Contains(html, ("You have to enter a password")))
+}
