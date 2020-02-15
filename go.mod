@@ -1,4 +1,4 @@
-module github.com/matt035343/devops
+module go
 
 go 1.13
 
