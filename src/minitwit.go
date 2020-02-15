@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	authentication "go/src/authentication"
 	"go/src/database"
@@ -40,6 +41,7 @@ func main() {
 	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/msgs/{username}", tweet).Methods("POST")
 	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
@@ -304,8 +306,15 @@ func checkErr(err error) {
 	}
 }
 
-func registerPost(w http.ResponseWriter, r *http.Request) {
+func registerPost(w http.ResponseWriter, r *http.Request) *http.Response {
 	errorMsg := ""
+
+	decoder := json.NewDecoder(r.Body)
+	var registerRequest types.RegisterRequest
+	decoder.Decode(&registerRequest)
+	if registerRequest != (types.RegisterRequest{}) {
+		registerPostFromJson(w, r, registerRequest)
+	}
 
 	if r.FormValue("username") == "" {
 		errorMsg = "You have to enter a username"
@@ -329,8 +338,29 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 			IsLoggedIn bool
 		}{true, errorMsg, false}
 		utils.RenderTemplate(w, utils.REGISTER, data)
+		return r.Response
 	} else {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		fmt.Println("else")
+		http.Redirect(w, r, "/login", http.StatusNoContent)
+		return r.Response
 	}
+}
 
+func registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
+	var res = registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
+	if res {
+		http.Redirect(w, r, "/login", http.StatusNoContent)
+	}
+}
+
+func tweet(w http.ResponseWriter, r *http.Request) {
+	// username := mux.Vars(r)["username"]
+	decoder := json.NewDecoder(r.Body)
+	var tweet types.TweetRequest
+	err := decoder.Decode(&tweet)
+	if err != nil {
+		panic(err)
+	}
+	http.Redirect(w, r, "aa", http.StatusNoContent)
+	// fmt.Println(tweet.Content)
 }
