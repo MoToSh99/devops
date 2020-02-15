@@ -10,6 +10,7 @@ import (
 	"go/src/types"
 	"go/src/utils"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 
 var PER_PAGE = 30
 var STATIC_ROOT_PATH = "./src/static"
+var LATEST int64 = 0
 
 func main() {
 
@@ -41,6 +43,7 @@ func main() {
 	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
 	r.HandleFunc("/login", login).Methods("GET", "POST")
 	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/msgs", tweetGet).Methods("Get")
 	r.HandleFunc("/msgs/{username}", tweet).Methods("POST")
 	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
@@ -295,8 +298,9 @@ func registerGet(w http.ResponseWriter, r *http.Request) {
 
 func registerUser(username string, email string, hashedPassword string) bool {
 	err := database.AlterDB("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
-	checkErr(err)
-
+	if err != nil {
+		return false
+	}
 	return true
 }
 
@@ -308,14 +312,15 @@ func checkErr(err error) {
 
 func registerPost(w http.ResponseWriter, r *http.Request) *http.Response {
 	errorMsg := ""
-
+	fmt.Println(r.Form)
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	decoder.Decode(&registerRequest)
 	if registerRequest != (types.RegisterRequest{}) {
 		registerPostFromJson(w, r, registerRequest)
 	}
-
+	fmt.Println("qawd")
+	fmt.Println(r.FormValue("username"))
 	if r.FormValue("username") == "" {
 		errorMsg = "You have to enter a username"
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
@@ -353,14 +358,38 @@ func registerPostFromJson(w http.ResponseWriter, r *http.Request, registerReques
 	}
 }
 
+func tweetGet(w http.ResponseWriter, r *http.Request) {
+	latest, err1 := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	no_msgs, err2 := strconv.ParseInt(r.URL.Query().Get("no_msgs"), 10, 64)
+	if err1 != nil || err2 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else {
+		LATEST = latest
+		messages := database.QueryMessages(`select message.*, user.* from message, user
+			where message.flagged = 0 and message.author_id = user.user_id
+			order by message.pub_date desc limit ?`, no_msgs)
+
+		var filtered_msgs []types.TweetResponse
+
+		for _, msg := range messages {
+			filtered_msgs = append(filtered_msgs, types.TweetResponse{Content: msg.Text, User: msg.Username, Pub_date: msg.PublishedDate})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(filtered_msgs)
+
+	}
+}
+
 func tweet(w http.ResponseWriter, r *http.Request) {
 	// username := mux.Vars(r)["username"]
-	decoder := json.NewDecoder(r.Body)
-	var tweet types.TweetRequest
-	err := decoder.Decode(&tweet)
-	if err != nil {
-		panic(err)
-	}
-	http.Redirect(w, r, "aa", http.StatusNoContent)
-	// fmt.Println(tweet.Content)
+	// decoder := json.NewDecoder(r.Body)
+	// var tweet types.TweetRequest
+	// err := decoder.Decode(&tweet)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// http.Redirect(w, r, "aa", http.StatusNoContent)
+	// // fmt.Println(tweet.Content)
 }
