@@ -331,7 +331,7 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 	} else if r.FormValue("password") != r.FormValue("password2") {
 		errorMsg = utils.PASSWORDS_DOES_NOT_MATCH_MESSAGE
 	} else if !isUsernameAvailable(r.FormValue("username")) {
-		errorMsg = utils.USERNAME_TAKEN_MESSAGES
+		errorMsg = utils.USERNAME_TAKEN
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
 		registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
