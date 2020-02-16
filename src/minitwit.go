@@ -323,15 +323,15 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.FormValue("username") == "" {
-		errorMsg = "You have to enter a username"
+		errorMsg = utils.ENTER_A_USERNAME
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
-		errorMsg = "You have to enter a valid email address"
+		errorMsg = utils.ENTER_A_VALID_EMAIL
 	} else if r.FormValue("password") == "" {
-		errorMsg = "You have to enter a password"
+		errorMsg = utils.YOU_HAVE_TO_ENTER_A_PASSWORD
 	} else if r.FormValue("password") != r.FormValue("password2") {
-		errorMsg = "The two passwords do not match"
+		errorMsg = utils.PASSWORDS_DOES_NOT_MATCH_MESSAGE
 	} else if !isUsernameAvailable(r.FormValue("username")) {
-		errorMsg = "The username is already taken"
+		errorMsg = utils.USERNAME_TAKEN_MESSAGES
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
 		registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
@@ -350,7 +350,7 @@ func registerPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
-	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
 	if latest_err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -358,13 +358,13 @@ func registerPostFromJson(w http.ResponseWriter, r *http.Request, registerReques
 	LATEST = latest
 	error := ""
 	if registerRequest.Username == "" {
-		error = "You have to enter a username"
+		error = utils.ENTER_A_USERNAME
 	} else if registerRequest.Email == "" || !strings.Contains(registerRequest.Email, "@") {
-		error = "You have to enter a valid email address"
+		error = utils.ENTER_A_VALID_EMAIL
 	} else if registerRequest.Pwd == "" {
-		error = "You have to enter a password"
+		error = utils.YOU_HAVE_TO_ENTER_A_PASSWORD
 	} else if !isUsernameAvailable(registerRequest.Username) {
-		error = "The username is already taken"
+		error = utils.USERNAME_TAKEN
 	}
 	if error != "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -492,7 +492,6 @@ func followUsername(w http.ResponseWriter, r *http.Request) {
 		if isFollow {
 			followUsernamePost(w, r, userID, followRequest)
 		} else {
-			fmt.Println(followRequest)
 			unFollowUsernamePost(w, r, userID, followRequest)
 		}
 	}
