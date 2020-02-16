@@ -488,6 +488,7 @@ func followUsername(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 		isFollow := followRequest.Follow != ""
 		if isFollow {
 			followUsernamePost(w, r, userID, followRequest)
