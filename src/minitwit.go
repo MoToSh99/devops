@@ -39,7 +39,7 @@ func main() {
 
 	r.HandleFunc("/", authentication.Auth(timeline))
 	r.HandleFunc("/public", publicTimeline)
-	r.HandleFunc("/logout", logout)
+	r.HandleFunc("/logout", Logout)
 	r.HandleFunc("/addMessage", authentication.Auth(AddMessage)).Methods("POST")
 	r.HandleFunc("/login", Login).Methods("GET", "POST")
 	r.HandleFunc("/register", Register).Methods("GET", "POST")
@@ -114,7 +114,6 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func userTimeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("User timeline hit")
 
 	username := mux.Vars(r)["username"]
 	profile := types.User{}
@@ -232,7 +231,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 	if !userFound {
 		data.HasError = true
-		data.ErrorMsg = "Cannot recognize user"
+		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
 		utils.RenderTemplate(w, utils.LOGIN, data)
 		return
@@ -261,8 +260,7 @@ func authenticate(username string, password string) (bool, *types.User) {
 	return true, user
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("logout hit")
+func Logout(w http.ResponseWriter, r *http.Request) {
 	err := authentication.ClearSession(w, r)
 	if err != nil {
 		panic(err)
