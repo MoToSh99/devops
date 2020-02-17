@@ -37,3 +37,7 @@ To build and run the project:
 
 To add go as environment variable:
 export PATH=$PATH:/usr/local/go/bin
+
+----------------------------------------------------------------
+
+![Dependency diagram](./dependency.png)
