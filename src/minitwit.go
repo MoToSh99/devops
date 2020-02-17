@@ -308,16 +308,17 @@ func checkErr(err error) {
 }
 
 func registerPost(w http.ResponseWriter, r *http.Request) {
+	username_from_form := r.FormValue("username")
 	errorMsg := ""
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	decoder.Decode(&registerRequest)
-	if registerRequest != (types.RegisterRequest{}) {
+	if registerRequest != (types.RegisterRequest{}) && username_from_form == "" {
 		registerPostFromJson(w, r, registerRequest)
 		return
 	}
 
-	if r.FormValue("username") == "" {
+	if username_from_form == "" {
 		errorMsg = utils.ENTER_A_USERNAME
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
 		errorMsg = utils.ENTER_A_VALID_EMAIL
