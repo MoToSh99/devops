@@ -99,3 +99,18 @@ func QueryMessages(query string, args ...interface{}) []types.MessageViewData {
 	}
 	return messages
 }
+
+func QueryFollowers(query string, args ...interface{}) types.FollowerResponse {
+	rows := QueryRowsDB(query, args...)
+	followers := []string{}
+
+	for rows.Next() {
+		follower := ""
+		err := rows.Scan(&follower)
+		if err != nil {
+			log.Fatal(err)
+		}
+		followers = append(followers, follower)
+	}
+	return types.FollowerResponse{Follows: followers}
+}
