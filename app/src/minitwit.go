@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
-	authentication "go/src/authentication"
-	"go/src/database"
-	"go/src/types"
-	"go/src/utils"
 	"net/http"
 	"strings"
 	"time"
+
+	authentication "github.com/matt035343/devops/src/authentication"
+	"github.com/matt035343/devops/src/database"
+	"github.com/matt035343/devops/src/types"
+	"github.com/matt035343/devops/src/utils"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"

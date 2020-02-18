@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	"go/src/types"
-	"go/src/utils"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/matt035343/devops/src/types"
+	"github.com/matt035343/devops/src/utils"
 
 	_ "github.com/mattn/go-sqlite3"
 )
