@@ -14,4 +14,4 @@ clean:
 
 
 prod-start:
-	docker-compose up -d
+	docker-compose up -d --no-deps --build
