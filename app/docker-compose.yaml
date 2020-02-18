@@ -1,0 +1,10 @@
+version: '2'
+services:
+  go-web-app:
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: .
+    environment:
+      - VIRTUAL_HOST=178.128.249.71
+      - LETSENCRYPT_HOST=178.128.249.71
