@@ -39,10 +39,10 @@ func main() {
 
 	r.HandleFunc("/", authentication.Auth(timeline))
 	r.HandleFunc("/public", publicTimeline)
-	r.HandleFunc("/logout", logout)
-	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
-	r.HandleFunc("/login", login).Methods("GET", "POST")
-	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/logout", Logout)
+	r.HandleFunc("/addMessage", authentication.Auth(AddMessage)).Methods("POST")
+	r.HandleFunc("/login", Login).Methods("GET", "POST")
+	r.HandleFunc("/register", Register).Methods("GET", "POST")
 	r.HandleFunc("/msgs", tweetsGet).Methods("Get")
 	r.HandleFunc("/msgs/{username}", tweetsUsername).Methods("GET", "POST")
 	r.HandleFunc("/fllws/{username}", followUsername).Methods("GET", "POST")
@@ -114,7 +114,6 @@ func publicTimeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func userTimeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("User timeline hit")
 
 	username := mux.Vars(r)["username"]
 	profile := types.User{}
@@ -181,8 +180,7 @@ func unfollowUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func addMessage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("addMessage hit")
+func AddMessage(w http.ResponseWriter, r *http.Request) {
 
 	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
@@ -196,7 +194,7 @@ func addMessage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/public", http.StatusFound)
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		loginGet(w, r)
 	} else if r.Method == "POST" {
@@ -233,7 +231,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 	if !userFound {
 		data.HasError = true
-		data.ErrorMsg = "Cannot recognize user"
+		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
 		utils.RenderTemplate(w, utils.LOGIN, data)
 		return
@@ -262,8 +260,7 @@ func authenticate(username string, password string) (bool, *types.User) {
 	return true, user
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("logout hit")
+func Logout(w http.ResponseWriter, r *http.Request) {
 	err := authentication.ClearSession(w, r)
 	if err != nil {
 		panic(err)
@@ -272,7 +269,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func register(w http.ResponseWriter, r *http.Request) {
+func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		registerGet(w, r)
 	} else if r.Method == "POST" {

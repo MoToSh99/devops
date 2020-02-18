@@ -17,7 +17,12 @@ var db = ConnectDB()
 
 //InitDB initialize the database tables
 func InitDB() {
-	file, err := os.Open("src/database/schema.sql")
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+	}
+	databasePath := wd + "/database/schema.sql"
+	file, err := os.Open(databasePath)
 	if err != nil {
 		fmt.Println(err)
 	}
