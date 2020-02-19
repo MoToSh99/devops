@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-//	"encoding/gob"
+	"encoding/gob"
 	"fmt"
 	"net/http"
 	"strings"
@@ -24,30 +24,28 @@ var STATIC_ROOT_PATH = "./src/static"
 func main() {
 
 	// Init DB if it doesn't exist
-//	if !utils.FileExists("/tmp/minitwit.db") {
-//		fmt.Println("Initializing database")
-//		database.InitDB()
-//	}
+	if !utils.FileExists("/tmp/minitwit.db") {
+		fmt.Println("Initializing database")
+		database.InitDB()
+	}
 	r := mux.NewRouter()
-	//r.PathPrefix("/css/").Handler(
-	//	http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
-	//)
-	//gob.Register(&types.User{})
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		        fmt.Fprintf(w, "<h1>This is the homepage. Try /hello and /hello/Sammy\n</h1>")
-			    })
-	//r.HandleFunc("/", authentication.Auth(timeline))
-	//r.HandleFunc("/public", publicTimeline)
-	//r.HandleFunc("/logout", logout)
-	//r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
-	//r.HandleFunc("/login", login).Methods("GET", "POST")
-	//r.HandleFunc("/register", register).Methods("GET", "POST")
-	//r.HandleFunc("/{username}", authentication.Auth(userTimeline))
-	//r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
-	//r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
+	r.PathPrefix("/css/").Handler(
+		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
+	)
+	gob.Register(&types.User{})
 
-	fmt.Println("Running: localhost:80/public")
-	http.ListenAndServe(":80", r)
+	r.HandleFunc("/", authentication.Auth(timeline))
+	r.HandleFunc("/public", publicTimeline)
+	r.HandleFunc("/logout", logout)
+	r.HandleFunc("/addMessage", authentication.Auth(addMessage)).Methods("POST")
+	r.HandleFunc("/login", login).Methods("GET", "POST")
+	r.HandleFunc("/register", register).Methods("GET", "POST")
+	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
+	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
+	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
+
+	fmt.Println("Running: localhost:5000/public")
+	http.ListenAndServe(":5000", r)
 
 }
 

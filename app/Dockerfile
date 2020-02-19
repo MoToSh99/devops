@@ -20,7 +20,9 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /usr/bin
 
 COPY --from=build /devops/src/database /usr/bin/src/database
+COPY --from=build /devops/src/static /usr/bin/src/static
 COPY --from=build /devops/bin /go/bin
 
-EXPOSE 80
+
+EXPOSE 5000
 ENTRYPOINT ["/go/bin/web-app"]
