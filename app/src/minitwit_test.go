@@ -2,15 +2,16 @@ package main
 
 import (
 	"encoding/gob"
-	authentication "go/src/authentication"
-	"go/src/database"
-	"go/src/types"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	authentication "github.com/matt035343/devops/src/authentication"
+	"github.com/matt035343/devops/src/database"
+	"github.com/matt035343/devops/src/types"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
