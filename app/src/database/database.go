@@ -18,7 +18,12 @@ var db = ConnectDB()
 
 //InitDB initialize the database tables
 func InitDB() {
-	file, err := os.Open("src/database/schema.sql")
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+	}
+	databasePath := wd + "/database/schema.sql"
+	file, err := os.Open(databasePath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -99,4 +104,19 @@ func QueryMessages(query string, args ...interface{}) []types.MessageViewData {
 		messages = append(messages, messageViewData)
 	}
 	return messages
+}
+
+func QueryFollowers(query string, args ...interface{}) types.FollowerResponse {
+	rows := QueryRowsDB(query, args...)
+	followers := []string{}
+
+	for rows.Next() {
+		follower := ""
+		err := rows.Scan(&follower)
+		if err != nil {
+			log.Fatal(err)
+		}
+		followers = append(followers, follower)
+	}
+	return types.FollowerResponse{Follows: followers}
 }

@@ -10,7 +10,6 @@ WORKDIR /devops
 COPY go.mod .
 COPY go.sum .
 
-#RUN go get ./...
 RUN go mod download
 
 RUN GOOS=linux go build -ldflags="-s -w" -o ./bin/web-app ./src/minitwit.go 
