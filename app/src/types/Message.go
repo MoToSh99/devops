@@ -1,9 +1,10 @@
 package types
 
 type Message struct {
-	AuthorID      int
+	// Author        User `gorm:"foreignkey:AuthorID;association_foreignkey:UserID"`
+	AuthorID      int `gorm:"primary_key"`
 	Text          string
-	Flagged       int
+	Flagged       bool
 	MessageID     int
-	PublishedDate string
+	PublishedDate int64
 }
