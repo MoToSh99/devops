@@ -7,6 +7,7 @@ import (
 	"fmt"
 	authentication "go/src/authentication"
 	"go/src/database"
+	"go/src/server"
 	"go/src/types"
 	"go/src/utils"
 	"net/http"
@@ -24,34 +25,9 @@ var STATIC_ROOT_PATH = "./src/static"
 var LATEST int64 = 0
 
 func main() {
-
-	// Init DB if it doesn't exist
-	if !utils.FileExists("/tmp/minitwit.db") {
-		fmt.Println("Initializing database")
-		database.InitDB()
-	}
-	fmt.Println("Running: localhost:5000/public")
-	r := mux.NewRouter()
-	r.PathPrefix("/css/").Handler(
-		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
-	)
 	gob.Register(&types.User{})
-
-	r.HandleFunc("/", authentication.Auth(timeline))
-	r.HandleFunc("/public", publicTimeline)
-	r.HandleFunc("/logout", Logout)
-	r.HandleFunc("/addMessage", authentication.Auth(AddMessage)).Methods("POST")
-	r.HandleFunc("/login", Login).Methods("GET", "POST")
-	r.HandleFunc("/register", Register).Methods("GET", "POST")
-	r.HandleFunc("/msgs", tweetsGet).Methods("Get")
-	r.HandleFunc("/msgs/{username}", tweetsUsername).Methods("GET", "POST")
-	r.HandleFunc("/fllws/{username}", followUsername).Methods("GET", "POST")
-	r.HandleFunc("/latest", latest).Methods("GET")
-	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
-	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
-	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
-	http.ListenAndServe(":5000", r)
-
+	s := server.CreateNewServer("sqlite3", "/tmp/minitwit.db", true, "/database/schema.sql")
+	s.Serve(5000)
 }
 
 func getUserID(username string) (int, error) {

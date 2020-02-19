@@ -10,18 +10,17 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db = ConnectDB()
-
 //InitDB initialize the database tables
-func InitDB() {
+func initDatabase(schemaLocation string) {
 	wd, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
 	}
-	databasePath := wd + "/database/schema.sql"
+	databasePath := wd + schemaLocation
 	file, err := os.Open(databasePath)
 	if err != nil {
 		fmt.Println(err)
@@ -41,27 +40,18 @@ func InitDB() {
 	}
 }
 
-//ConnectDB returns a new connection to the database
-func ConnectDB() *sql.DB {
-	connection, err := sql.Open("sqlite3", "/tmp/minitwit.db")
-	if err != nil {
-		fmt.Println(err)
+func ConnectDatabase(databaseDialect, connectionString string, createDatabaseIfAbsent bool, schemaLocation string) (*gorm.DB, err) {
+	if databaseDialect == "sqlite3" && createDatabaseIfAbsent&!utils.FileExists(connectionString) {
+		initDatabase(schemaLocation)
 	}
-	return connection
-}
-
-//ExecCommand executes sql command
-func ExecCommand(sqlCommand string) {
-	statement, err := db.Prepare(sqlCommand)
-	if err != nil {
-		fmt.Println(err)
-	}
-	statement.Exec()
+	return gorm.Open(databaseDialect, connectionString)
 }
 
 //QueryDB queries the database and returns a list of rows
-func QueryRowDB(query string, args ...interface{}) *sql.Row {
-	return db.QueryRow(query, args...) //automatically preparing
+func (db *gorm.DB) getFollowers(userID int) ([]types.Follower, error) {
+	var followers []type.Follower
+	err := db.Where(&types.Follower{WhomID: userID}).Find(&followers).Error
+	return followers, err
 }
 
 //QueryDB queries the database and returns a list of rows
