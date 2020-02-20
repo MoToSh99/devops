@@ -2,13 +2,10 @@ version: "2"
 services:
   go-web-app:
     restart: always
+    network_mode: host
+    container_name: webapp
     build:
       dockerfile: Dockerfile
       context: .
-    ports:
-      - "80:5000"
     volumes:
       - "/tmp:/tmp"
-    environment:
-      - VIRTUAL_HOST=127.0.0.1
-      - LETSENCRYPT_HOST=127.0.0.1
