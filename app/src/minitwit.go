@@ -12,5 +12,6 @@ import (
 func main() {
 	gob.Register(&types.User{})
 	s := server.CreateNewServer("sqlite3", "/tmp/minitwit.db")
+	defer s.ShutDown()
 	s.Serve(5000)
 }

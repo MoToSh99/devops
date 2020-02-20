@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/matt035343/devops/src/types"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -23,6 +21,5 @@ func (d *Database) GetUser(userID int) (user types.User, err error) {
 
 func (d *Database) GetUserFromUsername(username string) (user types.User, err error) {
 	err = d.db.Where(&types.User{Username: username}).First(&user).Error
-	fmt.Println(user)
 	return user, err
 }

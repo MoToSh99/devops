@@ -166,7 +166,6 @@ func (s *Server) loginGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("STEP 1")
 	errorMsg := ""
 	data := struct {
 		HasError        bool
@@ -178,22 +177,17 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	fmt.Println("STEP 2")
 
 	if username == "" {
 		errorMsg = "You have to enter a username"
-		fmt.Println("STEP 2.1")
 	}
 	if password == "" {
 		errorMsg = "You have to enter a password"
-		fmt.Println("STEP 2.2")
 	}
 
 	userFound, user := s.authenticate(username, password)
-	fmt.Println("STEP 3")
 
 	if !userFound {
-		fmt.Println("STEP 3.1")
 		data.HasError = true
 		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
@@ -201,20 +195,15 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
-	fmt.Println("STEP 4")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Println("STEP 4.1")
 		return
 	} else {
-		fmt.Println("STEP 4.2")
 		data.IsLoggedIn = true
 		data.Username = user.Username
 		data.RequestEndpoint = ""
 		http.Redirect(w, r, "/", http.StatusFound)
-		fmt.Println("LOGGED IN YEAH")
 	}
-	fmt.Println("STEP 5")
 }
 
 func (s *Server) authenticate(username string, password string) (bool, *types.User) {
