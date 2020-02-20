@@ -1,9 +1,0 @@
-version: "3"
-services:
-  nginx:
-    image: nginx:1.17
-    container_name: reverse-proxy
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - .:/etc/nginx/
