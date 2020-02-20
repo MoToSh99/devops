@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 	authentication "github.com/matt035343/devops/src/authentication"
 	"github.com/matt035343/devops/src/types"
 	"github.com/matt035343/devops/src/utils"
@@ -81,7 +81,7 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 	user := authentication.GetSessionValue(w, r, "user")
 	userID := (user.(*types.User)).UserID
 	follower, err := s.db.GetFollower(userID, profile.UserID)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		panic(err)
 	}
 
@@ -166,6 +166,7 @@ func (s *Server) loginGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("STEP 1")
 	errorMsg := ""
 	data := struct {
 		HasError        bool
@@ -177,17 +178,22 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 
 	username := r.FormValue("username")
 	password := r.FormValue("password")
+	fmt.Println("STEP 2")
 
 	if username == "" {
 		errorMsg = "You have to enter a username"
+		fmt.Println("STEP 2.1")
 	}
 	if password == "" {
 		errorMsg = "You have to enter a password"
+		fmt.Println("STEP 2.2")
 	}
 
 	userFound, user := s.authenticate(username, password)
+	fmt.Println("STEP 3")
 
 	if !userFound {
+		fmt.Println("STEP 3.1")
 		data.HasError = true
 		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
@@ -195,20 +201,25 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
+	fmt.Println("STEP 4")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println("STEP 4.1")
 		return
 	} else {
+		fmt.Println("STEP 4.2")
 		data.IsLoggedIn = true
 		data.Username = user.Username
 		data.RequestEndpoint = ""
 		http.Redirect(w, r, "/", http.StatusFound)
+		fmt.Println("LOGGED IN YEAH")
 	}
+	fmt.Println("STEP 5")
 }
 
 func (s *Server) authenticate(username string, password string) (bool, *types.User) {
 	user, err := s.db.GetUserFromUsername(username)
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		panic(err)
 	}
 
@@ -341,166 +352,169 @@ func (s *Server) getUserIDFromUrl(r *http.Request) (int, error) {
 	return u.UserID, err
 }
 
-// func tweetsGet(w http.ResponseWriter, r *http.Request) {
-// 	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-// 	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
-// 	if latest_err != nil || no_msgs_err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	} else {
-// 		LATEST = latest
-// 		messages := database.QueryMessages(`select message.*, user.* from message, user
-// 			where message.flagged = 0 and message.author_id = user.user_id
-// 			order by message.pub_date desc limit ?`, no_msgs)
+func (s *Server) tweetsGet(w http.ResponseWriter, r *http.Request) {
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if latest_err != nil || no_msgs_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else {
+		LATEST = latest
+		messages, err := s.db.GetPublicViewMessages(int(no_msgs))
+		if err != nil {
+			panic(err)
+		}
 
-// 		filtered_msgs := types.ConvertToTweetResponse(messages)
+		filtered_msgs := types.ConvertToTweetResponse(messages)
 
-// 		w.Header().Set("Content-Type", "application/json")
-// 		json.NewEncoder(w).Encode(filtered_msgs)
-// 	}
-// }
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(filtered_msgs)
+	}
+}
 
-// func tweetsUsername(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == "GET" {
-// 		tweetsUsernameGet(w, r)
-// 	} else if r.Method == "POST" {
-// 		tweetsUsernamePost(w, r)
-// 	}
-// }
+func (s *Server) tweetsUsername(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		s.tweetsUsernameGet(w, r)
+	} else if r.Method == "POST" {
+		s.tweetsUsernamePost(w, r)
+	}
+}
 
-// func tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
-// 	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-// 	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+func (s *Server) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 
-// 	if latest_err != nil || no_msgs_err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	userID, userID_err := getUserIDFromUrl(r)
-// 	if userID_err != nil {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	} else {
+	if latest_err != nil || no_msgs_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, userID_err := s.getUserIDFromUrl(r)
+	if userID_err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
 
-// 		LATEST = latest
-// 		messages := database.QueryMessages(`select message.*, user.* from message, user
-// 			where message.flagged = 0 and message.author_id = user.user_id and user.user_id = ?
-// 			order by message.pub_date desc limit ?`, userID, no_msgs)
+		LATEST = latest
+		messages, err := s.db.GetUserViewMessages(userID, int(no_msgs))
+		if err != nil {
+			panic(err)
+		}
 
-// 		filtered_msgs := types.ConvertToTweetResponse(messages)
+		filtered_msgs := types.ConvertToTweetResponse(messages)
 
-// 		w.Header().Set("Content-Type", "application/json")
-// 		json.NewEncoder(w).Encode(filtered_msgs)
-// 	}
-// }
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(filtered_msgs)
+	}
+}
 
-// func tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
-// 	userID, userID_err := getUserIDFromUrl(r)
-// 	if userID_err != nil {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	}
+func (s *Server) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
+	userID, userID_err := s.getUserIDFromUrl(r)
+	if userID_err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
-// 	decoder := json.NewDecoder(r.Body)
-// 	var tweet types.TweetRequest
-// 	tweet_err := decoder.Decode(&tweet)
-// 	if tweet_err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	} else {
-// 		err := database.AlterDB(`INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)`, userID, tweet.Content, time.Now())
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusNoContent)
-// 	}
-// }
+	decoder := json.NewDecoder(r.Body)
+	var tweet types.TweetRequest
+	tweet_err := decoder.Decode(&tweet)
+	if tweet_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else {
+		err := s.db.AddMessage(userID, tweet.Content, time.Now())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
 
-// func followUsername(w http.ResponseWriter, r *http.Request) {
-// 	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
+	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 
-// 	if latest_err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	LATEST = latest
-// 	userID, userID_err := getUserIDFromUrl(r)
-// 	if userID_err != nil || userID == 0 {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	}
+	if latest_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	LATEST = latest
+	userID, userID_err := s.getUserIDFromUrl(r)
+	if userID_err != nil || userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
-// 	if r.Method == "GET" {
-// 		followUsernameGet(w, r, userID)
-// 	} else if r.Method == "POST" {
-// 		decoder := json.NewDecoder(r.Body)
-// 		var followRequest types.FollowRequest
-// 		decoder.Decode(&followRequest)
-// 		if followRequest.Follow == "" && followRequest.Unfollow == "" {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			return
-// 		}
+	if r.Method == "GET" {
+		s.followUsernameGet(w, r, userID)
+	} else if r.Method == "POST" {
+		decoder := json.NewDecoder(r.Body)
+		var followRequest types.FollowRequest
+		decoder.Decode(&followRequest)
+		if followRequest.Follow == "" && followRequest.Unfollow == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-// 		isFollow := followRequest.Follow != ""
-// 		if isFollow {
-// 			followUsernamePost(w, r, userID, followRequest)
-// 		} else {
-// 			unFollowUsernamePost(w, r, userID, followRequest)
-// 		}
-// 	}
-// }
+		isFollow := followRequest.Follow != ""
+		if isFollow {
+			s.followUsernamePost(w, r, userID, followRequest)
+		} else {
+			s.unFollowUsernamePost(w, r, userID, followRequest)
+		}
+	}
+}
 
-// func followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
-// 	no_followers, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
-// 	if no_msgs_err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	userID, userID_err := getUserIDFromUrl(r)
-// 	if userID_err != nil || userID == 0 {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	}
-// 	followers := database.QueryFollowers(`SELECT user.username FROM user
-// 										INNER JOIN follower ON follower.whom_id=user.user_id
-// 										WHERE follower.who_id=?
-// 										LIMIT ?`, userID, no_followers)
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(followers)
-// }
+func (s *Server) followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
+	no_followers, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if no_msgs_err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, userID_err := s.getUserIDFromUrl(r)
+	if userID_err != nil || userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	followers, err := s.db.GetFollowers(userID, int(no_followers))
+	if err != nil {
+		panic(err)
+	}
 
-// func followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
-// 	follows_userID, follows_user_err := getUserID(followRequest.Follow)
-// 	if follows_user_err != nil || follows_userID == 0 {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	} else {
-// 		follow_insert_err := database.AlterDB(`INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`, userID, follows_userID)
-// 		if follow_insert_err != nil {
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusNoContent)
-// 	}
-// }
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(followers)
+}
 
-// func unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
-// 	unfollows_userID, unfollows_user_err := getUserID(unfollowRequest.Unfollow)
-// 	if unfollows_user_err != nil || unfollows_userID == 0 {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	} else {
-// 		unfollow_err := database.AlterDB(`DELETE FROM follower WHERE who_id = ? AND whom_id = ?`, userID, unfollows_userID)
-// 		if unfollow_err != unfollow_err {
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusNoContent)
-// 	}
-// }
+func (s *Server) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
+	follows_userID, follows_user_err := s.getUserID(followRequest.Follow)
+	if follows_user_err != nil || follows_userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		follow_insert_err := s.db.AddFollower(userID, follows_userID)
+		if follow_insert_err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
 
-// func latest(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(types.LatestResponse{Latest: LATEST})
-// }
+func (s *Server) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
+	unfollows_userID, unfollows_user_err := s.getUserID(unfollowRequest.Unfollow)
+	if unfollows_user_err != nil || unfollows_userID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		unfollow_err := s.db.DeleteFollower(userID, unfollows_userID)
+		if unfollow_err != unfollow_err {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func latest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(types.LatestResponse{Latest: LATEST})
+}
