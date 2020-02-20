@@ -5,14 +5,15 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	authentication "go/src/authentication"
-	"go/src/database"
-	"go/src/types"
-	"go/src/utils"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	authentication "github.com/matt035343/devops/src/authentication"
+	"github.com/matt035343/devops/src/database"
+	"github.com/matt035343/devops/src/types"
+	"github.com/matt035343/devops/src/utils"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -30,7 +31,6 @@ func main() {
 		fmt.Println("Initializing database")
 		database.InitDB()
 	}
-	fmt.Println("Running: localhost:5000/public")
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
@@ -50,6 +50,8 @@ func main() {
 	r.HandleFunc("/{username}", authentication.Auth(userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(unfollowUser))
+
+	fmt.Println("Running: localhost:5000/public")
 	http.ListenAndServe(":5000", r)
 
 }
