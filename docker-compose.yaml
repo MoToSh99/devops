@@ -4,7 +4,9 @@ services:
     restart: unless-stopped
     network_mode: host
     container_name: app
-    build: ./app
+    build:
+      dockerfile: Dockerfile
+      context: ./app
     volumes:
       - "/tmp:/tmp"
   nginx:
