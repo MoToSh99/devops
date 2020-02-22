@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	authentication "github.com/matt035343/devops/src/authentication"
-	"github.com/matt035343/devops/src/database"
+	authentication "github.com/matt035343/devops/app/src/authentication"
+	"github.com/matt035343/devops/app/src/database"
 
 	"github.com/gorilla/mux"
 )

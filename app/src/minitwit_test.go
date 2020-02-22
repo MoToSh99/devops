@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/matt035343/devops/src/server"
-	"github.com/matt035343/devops/src/types"
+	"github.com/matt035343/devops/app/src/server"
+	"github.com/matt035343/devops/app/src/types"
 
 	"github.com/stretchr/testify/assert"
 )

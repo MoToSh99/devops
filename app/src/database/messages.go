@@ -3,8 +3,8 @@ package database
 import (
 	"time"
 
-	"github.com/matt035343/devops/src/types"
-	"github.com/matt035343/devops/src/utils"
+	"github.com/matt035343/devops/app/src/types"
+	"github.com/matt035343/devops/app/src/utils"
 
 	_ "github.com/mattn/go-sqlite3"
 )

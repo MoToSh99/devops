@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
-	authentication "github.com/matt035343/devops/src/authentication"
-	"github.com/matt035343/devops/src/types"
-	"github.com/matt035343/devops/src/utils"
+	authentication "github.com/matt035343/devops/app/src/authentication"
+	"github.com/matt035343/devops/app/src/types"
+	"github.com/matt035343/devops/app/src/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
