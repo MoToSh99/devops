@@ -15,7 +15,7 @@ jobs:
     - name: Make install
       run: | 
             ls
-            cd /home/runner/work/devops/devops/app 
+            cd devops
             go build
     - name: Checkout code
       uses: actions/checkout@v2
