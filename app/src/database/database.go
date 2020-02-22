@@ -1,122 +1,30 @@
 package database
 
 import (
-	"bufio"
-	"database/sql"
-	"fmt"
-	"log"
-	"os"
-	"strings"
-
+	"github.com/jinzhu/gorm"
 	"github.com/matt035343/devops/src/types"
-	"github.com/matt035343/devops/src/utils"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db = ConnectDB()
-
-//InitDB initialize the database tables
-func InitDB() {
-	wd, err := os.Getwd()
-	if err != nil {
-		fmt.Println(err)
-	}
-	databasePath := wd + "/database/schema.sql"
-	file, err := os.Open(databasePath)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var currentLine string
-	statement := ""
-	for scanner.Scan() { //Read lines in schema.sql until semicolon which triggers the execute command.
-		currentLine = scanner.Text()
-		statement = statement + currentLine
-		if strings.Contains(currentLine, ";") {
-			ExecCommand(statement)
-			statement = "" //Reset statement string
-		}
-	}
+type Database struct {
+	db *gorm.DB
 }
 
-//ConnectDB returns a new connection to the database
-func ConnectDB() *sql.DB {
-	connection, err := sql.Open("sqlite3", "/tmp/minitwit.db")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return connection
+func New(gdb *gorm.DB) *Database {
+	return &Database{db: gdb}
 }
 
-//ExecCommand executes sql command
-func ExecCommand(sqlCommand string) {
-	statement, err := db.Prepare(sqlCommand)
-	if err != nil {
-		fmt.Println(err)
-	}
-	statement.Exec()
+func (d *Database) CloseDatabase() {
+	d.db.Close()
 }
 
-//QueryDB queries the database and returns a list of rows
-func QueryRowDB(query string, args ...interface{}) *sql.Row {
-	return db.QueryRow(query, args...) //automatically preparing
+func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
+	db, err := gorm.Open(databaseDialect, connectionString)
+	autoMigrate(db)
+	return New(db), err
 }
 
-//QueryDB queries the database and returns a list of rows
-func QueryRowsDB(query string, args ...interface{}) *sql.Rows {
-	rows, err := db.Query(query, args...) //automatically preparing
-	if err != nil {
-		fmt.Println(err)
-	}
-	return rows
-}
-
-func AlterDB(query string, args ...interface{}) error {
-	statement, err := db.Prepare(query)
-	_, err = statement.Exec(args...)
-	return err
-}
-
-func QueryMessages(query string, args ...interface{}) []types.MessageViewData {
-	rows := QueryRowsDB(query, args...)
-
-	messages := []types.MessageViewData{}
-
-	for rows.Next() {
-		message := types.Message{}
-		messageUser := types.User{}
-
-		err := rows.Scan(&message.MessageID, &message.AuthorID, &message.Text, &message.PublishedDate, &message.Flagged, &messageUser.UserID, &messageUser.Username, &messageUser.Email, &messageUser.PasswordHash)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		messageViewData := types.MessageViewData{
-			Text:          message.Text,
-			Email:         messageUser.Email,
-			GravatarURL:   utils.GravatarURL(messageUser.Email, 48),
-			Username:      messageUser.Username,
-			PublishedDate: utils.FormatDatetime(message.PublishedDate),
-		}
-		messages = append(messages, messageViewData)
-	}
-	return messages
-}
-
-func QueryFollowers(query string, args ...interface{}) types.FollowerResponse {
-	rows := QueryRowsDB(query, args...)
-	followers := []string{}
-
-	for rows.Next() {
-		follower := ""
-		err := rows.Scan(&follower)
-		if err != nil {
-			log.Fatal(err)
-		}
-		followers = append(followers, follower)
-	}
-	return types.FollowerResponse{Follows: followers}
+func autoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(&types.User{}).AutoMigrate(&types.Message{}).AutoMigrate(&types.Follower{}).Error
 }
