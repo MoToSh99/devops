@@ -7,16 +7,16 @@ jobs:
         go-version: [1.13.x]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
+    env:
+      working-directory: ./app
     steps:
     - name: Install Go
       uses: actions/setup-go@v1
       with:
         go-version: ${{ matrix.go-version }}
     - name: Make install
-      run: | 
-            ls
-            cd devops
-            go build
+      working-directory: ${{env.working-directory}}
+      run: make install
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Test
