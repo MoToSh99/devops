@@ -14,10 +14,8 @@ jobs:
       uses: actions/setup-go@v1
       with:
         go-version: ${{ matrix.go-version }}
-    - name: Make install
-      run: |
-            ls -R
-            make install
+    - name: go build
+      run: go build
       working-directory: ${{env.working-directory}}
     - name: Checkout code
       uses: actions/checkout@v2
