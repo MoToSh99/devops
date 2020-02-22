@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	"github.com/matt035343/devops/src/types"
+	"github.com/matt035343/devops/app/src/types"
 
 	_ "github.com/mattn/go-sqlite3"
 )
