@@ -14,7 +14,8 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Make install
       run: | 
-            cd app 
+            ls
+            cd /home/runner/work/devops/devops/app 
             go build
     - name: Checkout code
       uses: actions/checkout@v2
