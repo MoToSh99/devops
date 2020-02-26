@@ -18,6 +18,7 @@ jobs:
         dockerfile: "./app/Dockerfile"  
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+        context: "./app"  
   # - name: deploy docker to Digital Ocean
   #   run: ssh -o "StrictHostKeyChecking no" ${{rootbrugernavnet}}@${{digitalocean ip}}
   #   run: (cd ud i ../../var/www/devops)
