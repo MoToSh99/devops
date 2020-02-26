@@ -22,8 +22,9 @@ jobs:
     - name: Connect digital ocean
       uses: digitalocean/action-doctl@master
       env:
-        DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        
+        DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DO_TOKEN }}
+      with:
+        args: echo "ls"      
     - name: deploy docker to Digital Ocean
       run: |
        echo "ssh begin"
