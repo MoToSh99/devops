@@ -26,14 +26,7 @@ jobs:
         USERNAME: ${{ secrets.ROOT }}
         PORT: 22
         KEY: ${{ secrets.SSHKEY }}
-        script: ls
-    - name: deploy docker to Digital Ocean
-      run: |
-       echo "ssh begin"
-       ssh -o StrictHostKeyChecking=no ${{secrets.ROOT}}@${{secrets.DO_IP}}
-       echo "change directory to devops"
-       cd ../var/www/devops
-       echo "Run docker pull_request"
-       docker-compose pull_request
-       echo "Run docker compose"
-       docker-compose -f docker-compose.prod.yaml up -d
+        script: |
+         cd ../var/www/devops/
+         docker-compose pull_request
+         docker-compose -f docker-compose.prod.yaml up -d
