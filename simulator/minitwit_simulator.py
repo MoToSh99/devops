@@ -16,7 +16,6 @@ import requests
 from time import sleep
 from datetime import datetime
 from contextlib import closing
-import sqlite3
 
 
 CSV_FILENAME = "./minitwit_scenario.csv"
