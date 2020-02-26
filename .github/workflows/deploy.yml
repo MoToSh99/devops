@@ -23,7 +23,7 @@ jobs:
         DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       run: |
        echo "ssh begin"
-       ssh -o StrictHostKeyChecking=no ${{secrets.ROOT}}@${{DO_IP}}
+       ssh -o StrictHostKeyChecking=no ${{secrets.ROOT}}@${{secrets.DO_IP}}
        echo "change directory to devops"
        cd ../var/www/devops
        echo "Run docker pull_request"
