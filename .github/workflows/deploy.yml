@@ -29,4 +29,7 @@ jobs:
         script: |
          cd ../var/www/devops/
          ls
+         docker login
+         ${{ secrets.DOCKER_USERNAME }}
+         ${{ secrets.DOCKER_PASSWORD }}
          docker-compose -f docker-compose.prod.yaml up -d
