@@ -28,5 +28,5 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
         script: |
          cd ../var/www/devops/
-         docker-compose pull_request
+         ls
          docker-compose -f docker-compose.prod.yaml up -d
