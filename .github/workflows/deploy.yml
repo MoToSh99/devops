@@ -24,7 +24,7 @@ jobs:
       with:
         host: ${{ secrets.DO_IP }}
         USERNAME: ${{ secrets.ROOT }}
-        PORT: ${{ 5000 }}
+        PORT: 22
         KEY: ${{ secrets.SSHKEY }}
         script: ls
     - name: deploy docker to Digital Ocean
