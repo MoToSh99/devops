@@ -19,12 +19,14 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         context: "./app"  
         
-    - name: Connect digital ocean
-      uses: digitalocean/action-doctl@master
-      env:
-        DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DO_TOKEN }}
+    - name: Executing remote  command
+      uses: appleboy/ssh-action@master
       with:
-        args: echo "ls"      
+        host: ${{ secrets.DO_IP }}
+        USERNAME: ${{ secrets.ROOT }}
+        PORT: ${{ 5000 }}
+        KEY: ${{ secrets.SSHKEY }}
+        script: cat ls
     - name: deploy docker to Digital Ocean
       run: |
        echo "ssh begin"
