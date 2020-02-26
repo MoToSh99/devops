@@ -21,7 +21,7 @@ jobs:
     - name: deploy docker to Digital Ocean
       run: |
        echo "ssh begin"
-       ssh -o "StrictHostKeyChecking no" root@178.128.249.71
+       ssh -o StrictHostKeyChecking=no root@178.128.249.71
        echo "change directory to devops"
        cd ../var/www/devops
        echo "Run docker pull_request"
