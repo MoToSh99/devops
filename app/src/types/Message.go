@@ -6,6 +6,5 @@ type Message struct {
 	AuthorID      int
 	Text          string
 	Flagged       bool
-	MessageID     int
 	PublishedDate int64
 }
