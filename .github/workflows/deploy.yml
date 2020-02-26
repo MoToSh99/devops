@@ -19,12 +19,14 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         context: "./app"  
     - name: deploy docker to Digital Ocean
+      env:
+        DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       run: |
        echo "ssh begin"
-       ssh -o StrictHostKeyChecking=no root@178.128.249.71
+       ssh -o StrictHostKeyChecking=no ${{secrets.ROOT}}@${{DO_IP}}
        echo "change directory to devops"
        cd ../var/www/devops
        echo "Run docker pull_request"
        docker-compose pull_request
-       echo "Run docker pull_request"
+       echo "Run docker compose"
        docker-compose -f docker-compose.prod.yaml up -d
