@@ -9,6 +9,21 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func (d *Database) GetAllMessages() (messages []types.Message, err error) {
+	err = d.db.Model(&types.Message{}).Find(&messages).Error
+	return messages, err
+}
+
+func (d *Database) FlagMessage(messageID int) (err error) {
+	var message types.Message
+	err = d.db.Where(&types.Message{ID: messageID}).First(&message).Error
+	if err != nil {
+		return err
+	}
+	message.Flagged = true
+	return d.db.Save(&message).Error
+}
+
 func (d *Database) GetMessages(userID, limit int) (messages []types.Message, err error) {
 	err = d.db.Where(&types.Message{AuthorID: userID}).Limit(limit).Find(&messages).Error
 	return messages, err
