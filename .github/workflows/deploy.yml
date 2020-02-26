@@ -26,7 +26,7 @@ jobs:
         USERNAME: ${{ secrets.ROOT }}
         PORT: ${{ 5000 }}
         KEY: ${{ secrets.SSHKEY }}
-        script: cat ls
+        script: ls
     - name: deploy docker to Digital Ocean
       run: |
        echo "ssh begin"
