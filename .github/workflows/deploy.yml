@@ -18,8 +18,13 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         context: "./app"  
-  # - name: deploy docker to Digital Ocean
-  #   run: ssh -o "StrictHostKeyChecking no" ${{rootbrugernavnet}}@${{digitalocean ip}}
-  #   run: (cd ud i ../../var/www/devops)
-  #   run: docker-compose pull_request
-  #   run: docker-compose -f docker-compose.prod.yml up -d
+    - name: deploy docker to Digital Ocean
+      run: |
+       echo "ssh begin"
+       ssh -o "StrictHostKeyChecking no" ${{root}}@${{178.128.249.71}}
+       echo "change directory to devops"
+       cd ../var/www/devops
+       echo "Run docker pull_request"
+       docker-compose pull_request
+       echo "Run docker pull_request"
+       docker-compose -f docker-compose.prod.yaml up -d
