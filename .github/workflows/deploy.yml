@@ -15,7 +15,6 @@ jobs:
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: gruppe11/devops
-        dockerfile: "./app/Dockerfile"  
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         context: "./app"  
