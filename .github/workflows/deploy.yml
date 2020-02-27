@@ -1,0 +1,35 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: publish docker
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: gruppe11/devops
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        context: "./app"  
+        
+    - name: Executing remote  command
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DO_IP }}
+        USERNAME: ${{ secrets.ROOT }}
+        PORT: 22
+        KEY: ${{ secrets.SSHKEY }}
+        script: |
+         cd ../var/www/devops/
+         ls
+         docker login
+         ${{ secrets.DOCKER_USERNAME }}
+         ${{ secrets.DOCKER_PASSWORD }}
+         docker-compose -f docker-compose.prod.yaml up -d

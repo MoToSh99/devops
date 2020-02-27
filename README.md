@@ -15,8 +15,7 @@
 
     ~ Is it tested?
 
-      At the moment the solution is only tested manually.
-      Hence no automated testing.
+      Yes, we have a fully functional automated test suite running.
 
 ---
 

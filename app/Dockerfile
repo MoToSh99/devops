@@ -18,7 +18,6 @@ FROM alpine:3.9
 RUN apk --no-cache add ca-certificates
 WORKDIR /usr/bin
 
-COPY --from=build /devops/src/database /usr/bin/database
 COPY --from=build /devops/src/static /usr/bin/src/static
 COPY --from=build /devops/bin /go/bin
 
