@@ -59,6 +59,6 @@ func (s *Server) initRouter() *mux.Router {
 	r.HandleFunc("/simulator/msgs", s.tweetsGet).Methods("Get")
 	r.HandleFunc("/simulator/msgs/{username}", s.tweetsUsername).Methods("GET", "POST")
 	r.HandleFunc("/simulator/fllws/{username}", s.followUsername).Methods("GET", "POST")
-	r.HandleFunc("/simulator/latest", latest).Methods("GET")
+	r.HandleFunc("/simulator/latest", s.latest).Methods("GET")
 	return r
 }
