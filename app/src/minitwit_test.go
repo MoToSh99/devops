@@ -47,7 +47,7 @@ func login(username string, password string, serverInstance *server.Server) http
 	return *response
 }
 
-func register_and_login(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
+func registerAndLogin(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
 	request, _ := http.NewRequest("POST", "/register?username="+username+"&email="+email+"&password="+password+"&password2="+password2, strings.NewReader(form.Encode()))
 	response := httptest.NewRecorder()
