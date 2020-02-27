@@ -151,7 +151,7 @@ func Test_timelines(t *testing.T) {
 	gob.Register(&types.User{})
 	//user1
 	response := register_and_login("user1", "default", "default", "example@hotmail.com", serverInstance)
-	assert.Equal(t, 999, response.Code, "Status found")
+	assert.Equal(t, 302, response.Code, "Status found")
 
 	add_message("the message by user1", serverInstance)
 	request, _ := http.NewRequest("GET", "/public", nil)
