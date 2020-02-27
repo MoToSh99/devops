@@ -7,10 +7,16 @@ on:
     branches:
       - master
 jobs:
-  build:
+  test_and_deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    - name: go1.13  linters
+      uses: shoukoo/golang-pipeline/go1.13/linter@master
+    - name: go1.13 test
+      uses: shoukoo/golang-pipeline/go1.13/test@master
+      env:
+        PROJECT_PATH: "./app/"
     - name: publish docker
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -19,7 +25,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         context: "./app"  
         
-    - name: Executing remote  command
+    - name: Deploy on DigitalOcean
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.DO_IP }}
@@ -32,4 +38,6 @@ jobs:
          docker login
          ${{ secrets.DOCKER_USERNAME }}
          ${{ secrets.DOCKER_PASSWORD }}
+         docker-compose -f docker-compose.prod.yaml pull
+         docker-compose -f docker-compose.prod.yaml down
          docker-compose -f docker-compose.prod.yaml up -d

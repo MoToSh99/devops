@@ -50,7 +50,6 @@ func (s *Server) initRouter() *mux.Router {
 	r.HandleFunc("/addMessage", authentication.Auth(s.AddMessage)).Methods("POST")
 	r.HandleFunc("/login", s.Login).Methods("GET", "POST")
 	r.HandleFunc("/register", s.Register).Methods("GET", "POST")
-	r.HandleFunc("/latest", latest).Methods("GET")
 	r.HandleFunc("/{username}", authentication.Auth(s.userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(s.followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(s.unfollowUser))
@@ -60,5 +59,6 @@ func (s *Server) initRouter() *mux.Router {
 	r.HandleFunc("/simulator/msgs", s.tweetsGet).Methods("Get")
 	r.HandleFunc("/simulator/msgs/{username}", s.tweetsUsername).Methods("GET", "POST")
 	r.HandleFunc("/simulator/fllws/{username}", s.followUsername).Methods("GET", "POST")
+	r.HandleFunc("/simulator/latest", latest).Methods("GET")
 	return r
 }
