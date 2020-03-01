@@ -23,8 +23,8 @@ jobs:
         name: gruppe11/devops-test
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        context: "./app"  
-        
+        context: "./app"
+        tags: "latest"
     - name: Deploy on DigitalOcean
       uses: appleboy/ssh-action@master
       with:
