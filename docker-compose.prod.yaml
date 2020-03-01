@@ -1,7 +1,7 @@
 version: "3"
 services:
   go-web-app:
-    image: gruppe11/devops:latest
+    image: gruppe11/devops-prod:latest
     restart: unless-stopped
     container_name: app
     network_mode: host

@@ -1,0 +1,42 @@
+name: Deploy-dev
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+jobs:
+  test_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@develop
+    - name: go1.13  linters
+      uses: shoukoo/golang-pipeline/go1.13/linter@develop
+    - name: go1.13 test
+      uses: shoukoo/golang-pipeline/go1.13/test@develop
+      env:
+        PROJECT_PATH: "./app/"
+    - name: publish docker
+      uses: elgohr/Publish-Docker-Github-Action@develop
+      with:
+        name: gruppe11/devops-test
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        context: "./app"  
+        
+    - name: Deploy on DigitalOcean
+      uses: appleboy/ssh-action@develop
+      with:
+        host: ${{ secrets.DO_IP_TEST }}
+        USERNAME: ${{ secrets.ROOT }}
+        PORT: 22
+        KEY: ${{ secrets.SSHKEY }}
+        script: |
+         cd ../var/www/devops/
+         ls
+         docker login
+         ${{ secrets.DOCKER_USERNAME }}
+         ${{ secrets.DOCKER_PASSWORD }}
+         docker-compose -f docker-compose.dev.yaml pull
+         docker-compose -f docker-compose.dev.yaml up -d
