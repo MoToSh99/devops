@@ -10,15 +10,15 @@ jobs:
   test_and_deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@develop
+    - uses: actions/checkout@master
     - name: go1.13  linters
-      uses: shoukoo/golang-pipeline/go1.13/linter@develop
+      uses: shoukoo/golang-pipeline/go1.13/linter@master
     - name: go1.13 test
-      uses: shoukoo/golang-pipeline/go1.13/test@develop
+      uses: shoukoo/golang-pipeline/go1.13/test@master
       env:
         PROJECT_PATH: "./app/"
     - name: publish docker
-      uses: elgohr/Publish-Docker-Github-Action@develop
+      uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: gruppe11/devops-test
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -26,7 +26,7 @@ jobs:
         context: "./app"  
         
     - name: Deploy on DigitalOcean
-      uses: appleboy/ssh-action@develop
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.DO_IP_TEST }}
         USERNAME: ${{ secrets.ROOT }}
