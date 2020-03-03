@@ -50,7 +50,6 @@ func (s *Server) InitRouter() *mux.Router {
 	r.HandleFunc("/addMessage", authentication.Auth(s.addMessage)).Methods("POST")
 	r.HandleFunc("/login", s.login).Methods("GET", "POST")
 	r.HandleFunc("/register", s.register).Methods("GET", "POST")
-	r.HandleFunc("/latest", latest).Methods("GET")
 	r.HandleFunc("/{username}", authentication.Auth(s.userTimeline))
 	r.HandleFunc("/{username}/follow", authentication.Auth(s.followUser))
 	r.HandleFunc("/{username}/unfollow", authentication.Auth(s.unfollowUser))
