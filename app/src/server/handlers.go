@@ -307,7 +307,7 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	LATEST = latest
+	s.db.SetLatest(latest)
 	error := ""
 	if registerRequest.Username == "" {
 		error = utils.ENTER_A_USERNAME
@@ -348,7 +348,7 @@ func (s *Server) tweetsGet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		LATEST = latest
+		s.db.SetLatest(latest)
 		messages, err := s.db.GetPublicViewMessages(int(no_msgs))
 		if err != nil {
 			panic(err)
@@ -383,7 +383,7 @@ func (s *Server) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 
-		LATEST = latest
+		s.db.SetLatest(latest)
 		messages, err := s.db.GetUserViewMessages(userID, int(no_msgs))
 		if err != nil {
 			panic(err)
@@ -426,7 +426,7 @@ func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	LATEST = latest
+	s.db.SetLatest(latest)
 	userID, userID_err := s.getUserIDFromUrl(r)
 	if userID_err != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -503,7 +503,12 @@ func (s *Server) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, us
 	}
 }
 
-func latest(w http.ResponseWriter, r *http.Request) {
+func (s *Server) latest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(types.LatestResponse{Latest: LATEST})
+	l, err := s.db.GetLatest()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(l)
 }

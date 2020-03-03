@@ -26,5 +26,5 @@ func ConnectDatabase(databaseDialect, connectionString string) (*Database, error
 }
 
 func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&types.User{}).AutoMigrate(&types.Message{}).AutoMigrate(&types.Follower{}).Error
+	return db.AutoMigrate(&types.User{}).AutoMigrate(&types.Message{}).AutoMigrate(&types.Follower{}).AutoMigrate(&types.LatestResponse{}).Error
 }

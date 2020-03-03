@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy-prod
 on:
   push:
     branches:
@@ -7,22 +7,28 @@ on:
     branches:
       - master
 jobs:
-  build:
+  test_and_deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    - name: go1.13  linters
+      uses: shoukoo/golang-pipeline/go1.13/linter@master
+    - name: go1.13 test
+      uses: shoukoo/golang-pipeline/go1.13/test@master
+      env:
+        PROJECT_PATH: "./app/"
     - name: publish docker
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: gruppe11/devops
+        name: gruppe11/devops-prod
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        context: "./app"  
-        
-    - name: Executing remote  command
+        context: "./app"
+        tags: "latest"  
+    - name: Deploy on DigitalOcean
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.DO_IP }}
+        host: ${{ secrets.DO_IP_PROD }}
         USERNAME: ${{ secrets.ROOT }}
         PORT: 22
         KEY: ${{ secrets.SSHKEY }}
@@ -32,4 +38,5 @@ jobs:
          docker login
          ${{ secrets.DOCKER_USERNAME }}
          ${{ secrets.DOCKER_PASSWORD }}
+         docker-compose -f docker-compose.prod.yaml pull
          docker-compose -f docker-compose.prod.yaml up -d
