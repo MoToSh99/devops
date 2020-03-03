@@ -1,6 +1,9 @@
-name: Deploy
+name: Deploy-prod
 on:
   push:
+    branches:
+      - master
+  pull_request:
     branches:
       - master
 jobs:
@@ -17,15 +20,15 @@ jobs:
     - name: publish docker
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: gruppe11/devops
+        name: gruppe11/devops-prod
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        context: "./app"  
-        
+        context: "./app"
+        tags: "latest"  
     - name: Deploy on DigitalOcean
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.DO_IP }}
+        host: ${{ secrets.DO_IP_PROD }}
         USERNAME: ${{ secrets.ROOT }}
         PORT: 22
         KEY: ${{ secrets.SSHKEY }}
@@ -36,5 +39,4 @@ jobs:
          ${{ secrets.DOCKER_USERNAME }}
          ${{ secrets.DOCKER_PASSWORD }}
          docker-compose -f docker-compose.prod.yaml pull
-         docker-compose -f docker-compose.prod.yaml down
          docker-compose -f docker-compose.prod.yaml up -d
