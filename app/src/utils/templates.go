@@ -16,8 +16,6 @@ var (
 var rootpath = cleanWD(wdsrc)
 var STATIC_ROOT_PATH = rootpath + "/static"
 
-//var STATIC_ROOT_PATH = wd + "/static"
-
 var (
 	LOGIN    = STATIC_ROOT_PATH + "/templates/login.html"
 	FOOTER   = STATIC_ROOT_PATH + "/templates/footer.html"

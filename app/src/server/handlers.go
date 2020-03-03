@@ -137,7 +137,7 @@ func (s *Server) unfollowUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (s *Server) AddMessage(w http.ResponseWriter, r *http.Request) {
+func (s *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
 	userID := (user.(*types.User)).UserID
@@ -152,7 +152,7 @@ func (s *Server) AddMessage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/public", http.StatusFound)
 }
 
-func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
+func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		s.loginGet(w, r)
 	} else if r.Method == "POST" {
@@ -219,7 +219,7 @@ func (s *Server) authenticate(username string, password string) (bool, *types.Us
 	return true, &user
 }
 
-func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
+func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	err := authentication.ClearSession(w, r)
 	if err != nil {
 		panic(err)
@@ -228,7 +228,7 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
+func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		s.registerGet(w, r)
 	} else if r.Method == "POST" {
