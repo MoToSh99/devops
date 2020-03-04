@@ -53,4 +53,4 @@ To update the code here, do a git pull. Once pulled deploy by:
 
 ---
 
-![Dependency diagram](./dependency.png)
+![Dependency diagram](./dependencydiagram.png)
