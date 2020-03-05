@@ -321,7 +321,7 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 	if error != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, Error_msg: error})
+		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
 		return
 	} else {
 		res := s.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
