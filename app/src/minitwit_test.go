@@ -125,7 +125,7 @@ func TestLoginLogout(t *testing.T) {
 	serverInstance.ShutDown()
 }
 
-func TestMessage_recording(t *testing.T) {
+func TestMessageRecording(t *testing.T) {
 	serverInstance := initServer()
 
 	gob.Register(&types.User{})

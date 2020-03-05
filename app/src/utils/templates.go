@@ -14,19 +14,19 @@ var (
 )
 
 var rootpath = cleanWD(wdsrc)
-var STATIC_ROOT_PATH = rootpath + "/static"
+var staticRootPath = rootpath + "/static"
 
 var (
-	LOGIN    = STATIC_ROOT_PATH + "/templates/login.html"
-	FOOTER   = STATIC_ROOT_PATH + "/templates/footer.html"
-	LAYOUT   = STATIC_ROOT_PATH + "/templates/layout.html"
-	REGISTER = STATIC_ROOT_PATH + "/templates/register.html"
-	TIMELINE = STATIC_ROOT_PATH + "/templates/timeline.html"
+	Login    = staticRootPath + "/templates/login.html"
+	Footer   = staticRootPath + "/templates/footer.html"
+	Layout   = staticRootPath + "/templates/layout.html"
+	Register = staticRootPath + "/templates/register.html"
+	Timeline = staticRootPath + "/templates/timeline.html"
 )
 
 // GetTemplate returns executable template with header and footer
 func GetTemplate(route string) *html.Template {
-	return template.Must(template.ParseFiles(route, LAYOUT, FOOTER))
+	return template.Must(template.ParseFiles(route, Layout, Footer))
 }
 
 func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {

@@ -16,9 +16,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var PER_PAGE = 30
-var STATIC_ROOT_PATH = "./src/static"
-var LATEST int64 = 0
+var perPage = 30
+var staticRootPath = "./src/static"
+var latest int64 = 0
 
 func (s *Server) getUserID(username string) (int, error) {
 	u, err := s.db.GetUserFromUsername(username)
@@ -31,7 +31,7 @@ func (s *Server) getUserID(username string) (int, error) {
 func (s *Server) timeline(w http.ResponseWriter, r *http.Request) {
 	user := authentication.GetSessionValue(w, r, "user").(*(types.User))
 
-	messages, err := s.db.GetTimelineViewMessages(user.UserID, PER_PAGE)
+	messages, err := s.db.GetTimelineViewMessages(user.UserID, perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -44,13 +44,13 @@ func (s *Server) timeline(w http.ResponseWriter, r *http.Request) {
 		SessionUser:     user.Username,
 		UserProfile:     "",
 	}
-	utils.RenderTemplate(w, utils.TIMELINE, data)
+	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
 func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: " + r.RemoteAddr)
 
-	messages, err := s.db.GetPublicViewMessages(PER_PAGE)
+	messages, err := s.db.GetPublicViewMessages(perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +68,7 @@ func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 		data.SessionUser = username
 	}
 
-	utils.RenderTemplate(w, utils.TIMELINE, data)
+	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
 func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +85,7 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	messages, err := s.db.GetUserViewMessages(profile.UserID, PER_PAGE)
+	messages, err := s.db.GetUserViewMessages(profile.UserID, perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +100,7 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 		Followed:        follower.IsValidRelation(),
 	}
 
-	utils.RenderTemplate(w, utils.TIMELINE, data)
+	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
 func (s *Server) followUser(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +162,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) loginGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.LOGIN, nil)
+	utils.RenderTemplate(w, utils.Login, nil)
 }
 
 func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +191,7 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 		data.HasError = true
 		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
-		utils.RenderTemplate(w, utils.LOGIN, data)
+		utils.RenderTemplate(w, utils.Login, data)
 		return
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
@@ -246,7 +246,7 @@ func (s *Server) isUsernameAvailable(username string) bool {
 }
 
 func (s *Server) registerGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.REGISTER, nil)
+	utils.RenderTemplate(w, utils.Register, nil)
 }
 
 func (s *Server) registerUser(username string, email string, hashedPassword string) bool {
@@ -264,17 +264,17 @@ func checkErr(err error) {
 }
 
 func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
-	username_from_form := r.FormValue("username")
+	usernameFromForm := r.FormValue("username")
 	errorMsg := ""
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	decoder.Decode(&registerRequest)
-	if registerRequest != (types.RegisterRequest{}) && username_from_form == "" {
+	if registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
 		s.registerPostFromJson(w, r, registerRequest)
 		return
 	}
 
-	if username_from_form == "" {
+	if usernameFromForm == "" {
 		errorMsg = utils.ENTER_A_USERNAME
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
 		errorMsg = utils.ENTER_A_VALID_EMAIL
@@ -294,7 +294,7 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 			ErrorMsg   string
 			IsLoggedIn bool
 		}{true, errorMsg, false}
-		utils.RenderTemplate(w, utils.REGISTER, data)
+		utils.RenderTemplate(w, utils.Register, data)
 
 	} else {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -302,8 +302,8 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
-	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
-	if latest_err != nil {
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
+	if latestErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -342,22 +342,22 @@ func (s *Server) getUserIDFromUrl(r *http.Request) (int, error) {
 }
 
 func (s *Server) tweetsGet(w http.ResponseWriter, r *http.Request) {
-	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
-	if latest_err != nil || no_msgs_err != nil {
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	noMsgs, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if latestErr != nil || noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
 		s.db.SetLatest(latest)
-		messages, err := s.db.GetPublicViewMessages(int(no_msgs))
+		messages, err := s.db.GetPublicViewMessages(int(noMsgs))
 		if err != nil {
 			panic(err)
 		}
 
-		filtered_msgs := types.ConvertToTweetResponse(messages)
+		filteredMsgs := types.ConvertToTweetResponse(messages)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filtered_msgs)
+		json.NewEncoder(w).Encode(filteredMsgs)
 	}
 }
 
@@ -370,43 +370,43 @@ func (s *Server) tweetsUsername(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
-	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
-	no_msgs, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	noMsgs, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 
-	if latest_err != nil || no_msgs_err != nil {
+	if latestErr != nil || noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userID, userID_err := s.getUserIDFromUrl(r)
-	if userID_err != nil {
+	userID, userIDErr := s.getUserIDFromUrl(r)
+	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
 
 		s.db.SetLatest(latest)
-		messages, err := s.db.GetUserViewMessages(userID, int(no_msgs))
+		messages, err := s.db.GetUserViewMessages(userID, int(noMsgs))
 		if err != nil {
 			panic(err)
 		}
 
-		filtered_msgs := types.ConvertToTweetResponse(messages)
+		filteredMsgs := types.ConvertToTweetResponse(messages)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filtered_msgs)
+		json.NewEncoder(w).Encode(filteredMsgs)
 	}
 }
 
 func (s *Server) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
-	userID, userID_err := s.getUserIDFromUrl(r)
-	if userID_err != nil {
+	userID, userIDErr := s.getUserIDFromUrl(r)
+	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	var tweet types.TweetRequest
-	tweet_err := decoder.Decode(&tweet)
-	if tweet_err != nil {
+	tweetErr := decoder.Decode(&tweet)
+	if tweetErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
@@ -420,15 +420,15 @@ func (s *Server) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
-	latest, latest_err := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 
-	if latest_err != nil {
+	if latestErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	s.db.SetLatest(latest)
-	userID, userID_err := s.getUserIDFromUrl(r)
-	if userID_err != nil || userID == 0 {
+	userID, userIDErr := s.getUserIDFromUrl(r)
+	if userIDErr != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -454,17 +454,17 @@ func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
-	no_followers, no_msgs_err := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
-	if no_msgs_err != nil {
+	noFollowers, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
+	if noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userID, userID_err := s.getUserIDFromUrl(r)
-	if userID_err != nil || userID == 0 {
+	userID, userIDErr := s.getUserIDFromUrl(r)
+	if userIDErr != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	followers, err := s.db.GetFollowers(userID, int(no_followers))
+	followers, err := s.db.GetFollowers(userID, int(noFollowers))
 	if err != nil {
 		panic(err)
 	}
@@ -474,13 +474,13 @@ func (s *Server) followUsernameGet(w http.ResponseWriter, r *http.Request, userI
 }
 
 func (s *Server) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
-	follows_userID, follows_user_err := s.getUserID(followRequest.Follow)
-	if follows_user_err != nil || follows_userID == 0 {
+	followsUserID, followsUserErr := s.getUserID(followRequest.Follow)
+	if followsUserErr != nil || followsUserID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
-		follow_insert_err := s.db.AddFollower(userID, follows_userID)
-		if follow_insert_err != nil {
+		followInsertErr := s.db.AddFollower(userID, followsUserID)
+		if followInsertErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -489,13 +489,13 @@ func (s *Server) followUsernamePost(w http.ResponseWriter, r *http.Request, user
 }
 
 func (s *Server) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
-	unfollows_userID, unfollows_user_err := s.getUserID(unfollowRequest.Unfollow)
-	if unfollows_user_err != nil || unfollows_userID == 0 {
+	unfollowsUserID, unfollowsUserErr := s.getUserID(unfollowRequest.Unfollow)
+	if unfollowsUserErr != nil || unfollowsUserID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
-		unfollow_err := s.db.DeleteFollower(userID, unfollows_userID)
-		if unfollow_err != unfollow_err {
+		unfollowErr := s.db.DeleteFollower(userID, unfollowsUserID)
+		if unfollowErr != unfollowErr {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
