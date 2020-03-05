@@ -2,7 +2,7 @@ package types
 
 type TweetResponse struct {
 	Content  string
-	PubDate string
+	PubDate string `json:"Pub_date"`
 	User     string
 }
 
