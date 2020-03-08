@@ -6,7 +6,7 @@ import (
 	"github.com/matt035343/devops/app/src/authentication"
 )
 
-func Auth(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func Auth(f handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := authentication.GetSessionValue(w, r, "user")
 		if user != nil {

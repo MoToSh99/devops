@@ -8,6 +8,7 @@ import (
 	"github.com/matt035343/devops/app/src/middleware"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {
@@ -37,28 +38,38 @@ func CreateNewServer(databaseDialect, connectionString string) *Server {
 	return New(db)
 }
 
+var monitorMiddleware = middleware.Combine(
+	middleware.HTTPResponseCodeMonitor,
+	middleware.HTTPResponseTimeMonitor,
+	middleware.HTTPRequestCountMonitor,
+)
+
 func (s *Server) initRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
 	)
 
+	/* Monitor endpoints */
+	r.Handle("/metrics", promhttp.Handler())
+
 	/* Client endpoints */
-	r.HandleFunc("/", middleware.Auth(s.timeline))
-	r.HandleFunc("/public", s.publicTimeline)
-	r.HandleFunc("/logout", s.Logout)
-	r.HandleFunc("/addMessage", middleware.Auth(s.AddMessage)).Methods("POST")
-	r.HandleFunc("/login", s.Login).Methods("GET", "POST")
-	r.HandleFunc("/register", s.Register).Methods("GET", "POST")
-	r.HandleFunc("/{username}", middleware.Auth(s.userTimeline))
-	r.HandleFunc("/{username}/follow", middleware.Auth(s.followUser))
-	r.HandleFunc("/{username}/unfollow", middleware.Auth(s.unfollowUser))
+	r.HandleFunc("/", middleware.Auth(monitorMiddleware(s.timeline)))
+	r.HandleFunc("/public", monitorMiddleware(s.publicTimeline))
+	r.HandleFunc("/logout", monitorMiddleware(s.Logout))
+	r.HandleFunc("/addMessage", monitorMiddleware(middleware.Auth(s.AddMessage))).Methods("POST")
+	r.HandleFunc("/login", monitorMiddleware(s.Login)).Methods("GET", "POST")
+	r.HandleFunc("/register", monitorMiddleware(s.Register)).Methods("GET", "POST")
+	r.HandleFunc("/{username}", monitorMiddleware(middleware.Auth(s.userTimeline)))
+	r.HandleFunc("/{username}/follow", monitorMiddleware(middleware.Auth(s.followUser)))
+	r.HandleFunc("/{username}/unfollow", monitorMiddleware(middleware.Auth(s.unfollowUser)))
 
 	/* Simulator endpoints */
-	r.HandleFunc("/simulator/register", s.Register).Methods("GET", "POST")
-	r.HandleFunc("/simulator/msgs", s.tweetsGet).Methods("Get")
-	r.HandleFunc("/simulator/msgs/{username}", s.tweetsUsername).Methods("GET", "POST")
-	r.HandleFunc("/simulator/fllws/{username}", s.followUsername).Methods("GET", "POST")
-	r.HandleFunc("/simulator/latest", s.latest).Methods("GET")
+	r.HandleFunc("/simulator/register", monitorMiddleware(s.Register)).Methods("GET", "POST")
+	r.HandleFunc("/simulator/msgs", monitorMiddleware(s.tweetsGet)).Methods("Get")
+	r.HandleFunc("/simulator/msgs/{username}", monitorMiddleware(s.tweetsUsername)).Methods("GET", "POST")
+	r.HandleFunc("/simulator/fllws/{username}", monitorMiddleware(s.followUsername)).Methods("GET", "POST")
+	r.HandleFunc("/simulator/latest", monitorMiddleware(s.latest)).Methods("GET")
+
 	return r
 }

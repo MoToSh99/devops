@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	authentication "github.com/matt035343/devops/app/src/authentication"
+	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/types"
 	"github.com/matt035343/devops/app/src/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -115,6 +116,7 @@ func (s *Server) followUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	middleware.UsersFollowed.Inc()
 	authentication.Flash(w, r, "You are now following "+username)
 
 	http.Redirect(w, r, "/"+username, http.StatusFound)
@@ -132,6 +134,7 @@ func (s *Server) unfollowUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	middleware.UsersUnfollowed.Inc()
 	authentication.Flash(w, r, "You are no longer following "+username)
 
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -147,6 +150,7 @@ func (s *Server) AddMessage(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		middleware.MessagesSent.Inc()
 	}
 
 	http.Redirect(w, r, "/public", http.StatusFound)
@@ -254,6 +258,7 @@ func (s *Server) registerUser(username string, email string, hashedPassword stri
 	if err != nil {
 		return false
 	}
+	middleware.UsersRegistered.Inc()
 	return true
 }
 
@@ -415,6 +420,7 @@ func (s *Server) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		middleware.MessagesSent.Inc()
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -484,6 +490,7 @@ func (s *Server) followUsernamePost(w http.ResponseWriter, r *http.Request, user
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		middleware.UsersFollowed.Inc()
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -499,6 +506,7 @@ func (s *Server) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, us
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		middleware.UsersUnfollowed.Inc()
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
