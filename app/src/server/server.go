@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	authentication "github.com/matt035343/devops/app/src/authentication"
 	"github.com/matt035343/devops/app/src/database"
+	"github.com/matt035343/devops/app/src/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -44,15 +44,15 @@ func (s *Server) initRouter() *mux.Router {
 	)
 
 	/* Client endpoints */
-	r.HandleFunc("/", authentication.Auth(s.timeline))
+	r.HandleFunc("/", middleware.Auth(s.timeline))
 	r.HandleFunc("/public", s.publicTimeline)
 	r.HandleFunc("/logout", s.Logout)
-	r.HandleFunc("/addMessage", authentication.Auth(s.AddMessage)).Methods("POST")
+	r.HandleFunc("/addMessage", middleware.Auth(s.AddMessage)).Methods("POST")
 	r.HandleFunc("/login", s.Login).Methods("GET", "POST")
 	r.HandleFunc("/register", s.Register).Methods("GET", "POST")
-	r.HandleFunc("/{username}", authentication.Auth(s.userTimeline))
-	r.HandleFunc("/{username}/follow", authentication.Auth(s.followUser))
-	r.HandleFunc("/{username}/unfollow", authentication.Auth(s.unfollowUser))
+	r.HandleFunc("/{username}", middleware.Auth(s.userTimeline))
+	r.HandleFunc("/{username}/follow", middleware.Auth(s.followUser))
+	r.HandleFunc("/{username}/unfollow", middleware.Auth(s.unfollowUser))
 
 	/* Simulator endpoints */
 	r.HandleFunc("/simulator/register", s.Register).Methods("GET", "POST")
