@@ -39,5 +39,6 @@ jobs:
          docker-compose -f docker-compose.dev.yaml up -d
     - name: Scenario test
       run: |
-        python3 ./simulator/minitwit_simulator.py "http://142.93.238.65/simulator" | grep . && exit 1 || exit 0
+        cd simulator
+        python3 minitwit_simulator.py "http://142.93.238.65/simulator" | grep . && exit 1 || exit 0
 
