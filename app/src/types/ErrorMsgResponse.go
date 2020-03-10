@@ -2,5 +2,5 @@ package types
 
 type ErrorMsgResponse struct {
 	Status    int
-	Error_msg string
+	ErrorMsg string `json:"error_msg"`
 }

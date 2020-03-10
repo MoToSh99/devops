@@ -2,15 +2,15 @@ package types
 
 type TweetResponse struct {
 	Content  string
-	Pub_date string
+	PubDate string `json:"Pub_date"`
 	User     string
 }
 
 func ConvertToTweetResponse(tweets []MessageViewData) []TweetResponse {
-	var converted_msgs []TweetResponse
+	var convertedMsgs []TweetResponse
 
 	for _, msg := range tweets {
-		converted_msgs = append(converted_msgs, TweetResponse{Content: msg.Text, User: msg.Username, Pub_date: msg.PublishedDate})
+		convertedMsgs = append(convertedMsgs, TweetResponse{Content: msg.Text, User: msg.Username, PubDate: msg.PublishedDate})
 	}
-	return converted_msgs
+	return convertedMsgs
 }
