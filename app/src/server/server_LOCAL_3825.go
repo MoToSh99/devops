@@ -18,7 +18,7 @@ type Server struct {
 
 func New(db *database.Database) *Server {
 	s := &Server{db: db}
-	s.Router = s.InitRouter()
+	s.Router = s.initRouter()
 	return s
 }
 
@@ -44,7 +44,7 @@ var monitorMiddleware = middleware.Combine(
 	middleware.HTTPRequestCountMonitor,
 )
 
-func (s *Server) InitRouter() *mux.Router {
+func (s *Server) initRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("src/static/css/"))),
@@ -56,16 +56,16 @@ func (s *Server) InitRouter() *mux.Router {
 	/* Client endpoints */
 	r.HandleFunc("/", middleware.Auth(monitorMiddleware(s.timeline)))
 	r.HandleFunc("/public", monitorMiddleware(s.publicTimeline))
-	r.HandleFunc("/logout", monitorMiddleware(s.logout))
-	r.HandleFunc("/addMessage", monitorMiddleware(middleware.Auth(s.addMessage))).Methods("POST")
-	r.HandleFunc("/login", monitorMiddleware(s.login)).Methods("GET", "POST")
-	r.HandleFunc("/register", monitorMiddleware(s.register)).Methods("GET", "POST")
+	r.HandleFunc("/logout", monitorMiddleware(s.Logout))
+	r.HandleFunc("/addMessage", monitorMiddleware(middleware.Auth(s.AddMessage))).Methods("POST")
+	r.HandleFunc("/login", monitorMiddleware(s.Login)).Methods("GET", "POST")
+	r.HandleFunc("/register", monitorMiddleware(s.Register)).Methods("GET", "POST")
 	r.HandleFunc("/{username}", monitorMiddleware(middleware.Auth(s.userTimeline)))
 	r.HandleFunc("/{username}/follow", monitorMiddleware(middleware.Auth(s.followUser)))
 	r.HandleFunc("/{username}/unfollow", monitorMiddleware(middleware.Auth(s.unfollowUser)))
 
 	/* Simulator endpoints */
-	r.HandleFunc("/simulator/register", monitorMiddleware(s.register)).Methods("GET", "POST")
+	r.HandleFunc("/simulator/register", monitorMiddleware(s.Register)).Methods("GET", "POST")
 	r.HandleFunc("/simulator/msgs", monitorMiddleware(s.tweetsGet)).Methods("Get")
 	r.HandleFunc("/simulator/msgs/{username}", monitorMiddleware(s.tweetsUsername)).Methods("GET", "POST")
 	r.HandleFunc("/simulator/fllws/{username}", monitorMiddleware(s.followUsername)).Methods("GET", "POST")

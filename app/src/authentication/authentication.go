@@ -6,11 +6,11 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var SECRET_KEY = []byte("development key")
-var STORE = sessions.NewCookieStore(SECRET_KEY)
+var secretKey = []byte("development key")
+var store = sessions.NewCookieStore(secretKey)
 
 func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
-	session, err := STORE.Get(r, "session")
+	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
