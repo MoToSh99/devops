@@ -47,7 +47,7 @@ func login(username string, password string, serverInstance *server.Server) http
 	return *response
 }
 
-func register_and_login(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
+func registerAndLogin(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
 	request, _ := http.NewRequest("POST", "/register?username="+username+"&email="+email+"&password="+password+"&password2="+password2, strings.NewReader(form.Encode()))
 	response := httptest.NewRecorder()
@@ -65,7 +65,7 @@ func logout(serverInstance *server.Server) httptest.ResponseRecorder {
 	return *response
 }
 
-func add_message(text string, serverInstance *server.Server) httptest.ResponseRecorder {
+func addMessage(text string, serverInstance *server.Server) httptest.ResponseRecorder {
 	request, _ := http.NewRequest("POST", "/add_message?text="+text, nil)
 	response := httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(response, request)
@@ -77,7 +77,7 @@ func initServer() *server.Server {
 	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
 }
 
-func Test_register(t *testing.T) {
+func TestRegister(t *testing.T) {
 	//register(username, email, password, email)
 	serverInstance := initServer()
 
@@ -103,11 +103,11 @@ func Test_register(t *testing.T) {
 	serverInstance.ShutDown()
 }
 
-func Test_login_logout(t *testing.T) {
+func TestLoginLogout(t *testing.T) {
 	serverInstance := initServer()
 
 	gob.Register(&types.User{})
-	response := register_and_login("user1", "default", "default", "example@hotmail.com", serverInstance)
+	response := registerAndLogin("user1", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	response2 := logout(serverInstance)
@@ -125,15 +125,15 @@ func Test_login_logout(t *testing.T) {
 	serverInstance.ShutDown()
 }
 
-func Test_message_recording(t *testing.T) {
+func TestMessageRecording(t *testing.T) {
 	serverInstance := initServer()
 
 	gob.Register(&types.User{})
-	response := register_and_login("user1", "default", "default", "example@hotmail.com", serverInstance)
+	response := registerAndLogin("user1", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
-	add_message("foo bar 123", serverInstance)
-	add_message("hello world 123", serverInstance)
+	addMessage("foo bar 123", serverInstance)
+	addMessage("hello world 123", serverInstance)
 
 	request, _ := http.NewRequest("GET", "/public", nil)
 	response = *httptest.NewRecorder()
@@ -145,15 +145,15 @@ func Test_message_recording(t *testing.T) {
 	serverInstance.ShutDown()
 }
 
-func Test_timelines(t *testing.T) {
+func TestTimelines(t *testing.T) {
 	serverInstance := initServer()
 
 	gob.Register(&types.User{})
 	//user1
-	response := register_and_login("user1", "default", "default", "example@hotmail.com", serverInstance)
+	response := registerAndLogin("user1", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
-	add_message("the message by user1", serverInstance)
+	addMessage("the message by user1", serverInstance)
 	request, _ := http.NewRequest("GET", "/public", nil)
 	response = *httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(&response, request)
@@ -165,10 +165,10 @@ func Test_timelines(t *testing.T) {
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	//user2
-	response = register_and_login("user2", "default", "default", "example@hotmail.com", serverInstance)
+	response = registerAndLogin("user2", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
-	add_message("the message by user2", serverInstance)
+	addMessage("the message by user2", serverInstance)
 	request, _ = http.NewRequest("GET", "/public", nil)
 	response = *httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(&response, request)

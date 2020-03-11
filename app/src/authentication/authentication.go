@@ -1,4 +1,4 @@
-package authentiction
+package authentication
 
 import (
 	"net/http"
@@ -6,22 +6,11 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var SECRET_KEY = []byte("development key")
-var STORE = sessions.NewCookieStore(SECRET_KEY)
-
-func Auth(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user := GetSessionValue(w, r, "user")
-		if user != nil {
-			f(w, r)
-			return
-		}
-		http.Redirect(w, r, "/public", http.StatusFound)
-	}
-}
+var secretKey = []byte("development key")
+var store = sessions.NewCookieStore(secretKey)
 
 func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
-	session, err := STORE.Get(r, "session")
+	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

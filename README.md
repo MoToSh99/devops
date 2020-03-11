@@ -52,6 +52,11 @@ Once on the server, the code can be found at:
 The deployment is kept up to date, by our pipeline constructed in github actions.
 When pushed to the develop branch, the pipeline deploys to our test environment, & when pushed to master, it deploys to our production environment.
 
+# Monitor server
+
+A monitor server is running on following IP: http://104.248.88.157/
+On this server there is running Prometheus and Grafana. Prometheus can be accessed at http://104.248.88.157:9090. Grafana can be accessed at http://104.248.88.157:3000.
+
 ---
 
-![Dependency diagram](./dependency.png)
+![Dependency diagram](./dependencydiagram.png)

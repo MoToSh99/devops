@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/gob"
 
+	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
 
@@ -13,5 +14,6 @@ func main() {
 	gob.Register(&types.User{})
 	s := server.CreateNewServer("sqlite3", "/tmp/minitwit.db")
 	defer s.ShutDown()
+	go middleware.HTTPRequestCounter()
 	s.Serve(5000)
 }

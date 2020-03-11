@@ -1,0 +1,17 @@
+version: '3.5'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    network_mode: host
+    
+  grafana:
+    image: grafana/grafana:4.5.2
+    ports:
+      - "3000:3000"
+    network_mode: host
