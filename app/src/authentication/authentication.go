@@ -1,4 +1,4 @@
-package authentiction
+package authentication
 
 import (
 	"net/http"
@@ -8,17 +8,6 @@ import (
 
 var secretKey = []byte("development key")
 var store = sessions.NewCookieStore(secretKey)
-
-func Auth(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user := GetSessionValue(w, r, "user")
-		if user != nil {
-			f(w, r)
-			return
-		}
-		http.Redirect(w, r, "/public", http.StatusFound)
-	}
-}
 
 func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := store.Get(r, "session")
