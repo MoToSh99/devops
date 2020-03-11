@@ -44,6 +44,8 @@ func (s *Server) timeline(w http.ResponseWriter, r *http.Request) {
 		IsLoggedIn:      true,
 		SessionUser:     user.Username,
 		UserProfile:     "",
+		HasError:        false,
+		ErrorMsg:        "",
 	}
 	utils.RenderTemplate(w, utils.Timeline, data)
 }
@@ -60,6 +62,8 @@ func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 		Title:           "MEGA TITLE",
 		RequestEndpoint: "timeline",
 		Messages:        messages,
+		HasError:        false,
+		ErrorMsg:        "",
 	}
 
 	user := authentication.GetSessionValue(w, r, "user")
@@ -75,12 +79,28 @@ func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 	username := mux.Vars(r)["username"]
 	profile, err := s.db.GetUserFromUsername(username)
-	if err != nil {
+	user := authentication.GetSessionValue(w, r, "user")
+
+	userID := (user.(*types.User)).UserID
+
+	if err != nil && err.Error() == "record not found" {
+		error_response := types.RequestData{
+			Title:           "title",
+			RequestEndpoint: "userTimeline",
+			Messages:        nil,
+			IsLoggedIn:      true,
+			SessionUser:     (user.(*types.User)).Username,
+			UserProfile:     profile.Username,
+			Followed:        false,
+			HasError:        true,
+			ErrorMsg:        "Sorry! We could not find the user.",
+		}
+		utils.RenderTemplate(w, utils.Timeline, error_response)
+		return
+	} else if err != nil {
 		panic(err)
 	}
 
-	user := authentication.GetSessionValue(w, r, "user")
-	userID := (user.(*types.User)).UserID
 	follower, err := s.db.GetFollower(userID, profile.UserID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		panic(err)
@@ -99,6 +119,8 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 		SessionUser:     (user.(*types.User)).Username,
 		UserProfile:     profile.Username,
 		Followed:        follower.IsValidRelation(),
+		HasError:        false,
+		ErrorMsg:        "",
 	}
 
 	utils.RenderTemplate(w, utils.Timeline, data)

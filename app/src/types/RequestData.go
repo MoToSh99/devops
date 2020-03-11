@@ -8,4 +8,6 @@ type RequestData struct {
 	SessionUser     string
 	UserProfile     string
 	Followed        bool
+	HasError        bool
+	ErrorMsg        string
 }
