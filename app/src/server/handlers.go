@@ -83,7 +83,7 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 
 	userID := (user.(*types.User)).UserID
 
-	if err != nil && err.Error() == "record not found" {
+	if err != nil && err == gorm.ErrRecordNotFound {
 		error_response := types.RequestData{
 			Title:           "title",
 			RequestEndpoint: "userTimeline",
