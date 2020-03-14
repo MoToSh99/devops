@@ -509,7 +509,7 @@ func (s *Server) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, us
 		return
 	} else {
 		unfollowErr := s.db.DeleteFollower(userID, unfollowsUserID)
-		if unfollowErr != unfollowErr {
+		if unfollowErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
