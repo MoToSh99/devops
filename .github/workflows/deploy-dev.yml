@@ -29,11 +29,10 @@ jobs:
     - uses: actions/checkout@master
     - name: importcheck
       uses: grandcolline/golang-github-actions@v1.1.0
-      env:
-        PROJECT_PATH: "./app/"
       with:
         run: imports
         token: ${{ secrets.GITHUB_TOKEN }}
+        directory: "./app/"
   error-check:
     runs-on: ubuntu-latest
     name: ErrorCheck
@@ -41,11 +40,10 @@ jobs:
     - uses: actions/checkout@master
     - name: errorcheck
       uses: grandcolline/golang-github-actions@v1.1.0
-      env:
-        PROJECT_PATH: "./app/"
       with:
         run: errcheck
         token: ${{ secrets.GITHUB_TOKEN }}
+        directory: "./app/"
   shadow-check:
     runs-on: ubuntu-latest
     name: ShadowCheck
@@ -53,11 +51,10 @@ jobs:
     - uses: actions/checkout@master
     - name: shadowcheck
       uses: grandcolline/golang-github-actions@v1.1.0
-      env:
-        PROJECT_PATH: "./app/"
       with:
         run: shadow
         token: ${{ secrets.GITHUB_TOKEN }}
+        directory: "./app/"
   static-check:
     runs-on: ubuntu-latest
     name: StaticCheck
@@ -65,11 +62,10 @@ jobs:
     - uses: actions/checkout@master
     - name: staticcheck
       uses: grandcolline/golang-github-actions@v1.1.0
-      env:
-        PROJECT_PATH: "./app/"
       with:
         run: staticcheck
         token: ${{ secrets.GITHUB_TOKEN }}
+        directory: "./app/"
   security-check:
     runs-on: ubuntu-latest
     name: SecurityCheck
@@ -77,12 +73,11 @@ jobs:
     - uses: actions/checkout@master
     - name: securitycheck
       uses: grandcolline/golang-github-actions@v1.1.0
-      env:
-        PROJECT_PATH: "./app/"
       with:
         run: sec
         token: ${{ secrets.GITHUB_TOKEN }}
         flags: "-exclude=G104"
+        directory: "./app/"
   deploy:
     needs: [security-check, static-check, shadow-check, error-check, import-test, unit-test, test-linter]
     runs-on: ubuntu-latest
