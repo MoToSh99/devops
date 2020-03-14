@@ -4,16 +4,60 @@ on:
     branches:
       - develop
 jobs:
-  test_and_deploy:
+  test:
     runs-on: ubuntu-latest
+    name: Test
     steps:
     - uses: actions/checkout@master
-    - name: go1.13  linters
+    - name: Linter
       uses: shoukoo/golang-pipeline/go1.13/linter@master
-    - name: go1.13 test
+      env:
+        PROJECT_PATH: "./app/"
+    - name: Test
       uses: shoukoo/golang-pipeline/go1.13/test@master
       env:
         PROJECT_PATH: "./app/"
+    - name: Imports
+      uses: grandcolline/golang-github-actions@v1.1.0
+      env:
+        PROJECT_PATH: "./app/"
+      with:
+        run: imports
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: ErrCheck
+      uses: grandcolline/golang-github-actions@v1.1.0
+      env:
+        PROJECT_PATH: "./app/"
+      with:
+        run: errcheck
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Shadow
+      uses: grandcolline/golang-github-actions@v1.1.0
+      env:
+        PROJECT_PATH: "./app/"
+      with:
+        run: shadow
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: StaticCheck
+      uses: grandcolline/golang-github-actions@v1.1.0
+      env:
+        PROJECT_PATH: "./app/"
+      with:
+        run: staticcheck
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: SecurityCheck
+      uses: grandcolline/golang-github-actions@v1.1.0
+      env:
+        PROJECT_PATH: "./app/"
+      with:
+        run: sec
+        token: ${{ secrets.GITHUB_TOKEN }}
+        flags: "-exclude=G104"
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+    - uses: actions/checkout@master
     - name: publish docker
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -37,6 +81,11 @@ jobs:
          ${{ secrets.DOCKER_PASSWORD }}
          docker-compose -f docker-compose.dev.yaml pull
          docker-compose -f docker-compose.dev.yaml up -d
+  integration-test:
+    runs-on: ubuntu-latest
+    name: IntegrationTest
+    steps:
+    - uses: actions/checkout@master
     - name: Scenario test
       run: |
         cd simulator
