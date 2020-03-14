@@ -18,8 +18,6 @@ import (
 )
 
 var perPage = 30
-var staticRootPath = "./src/static"
-var latest int64 = 0
 
 func (s *Server) getUserID(username string) (int, error) {
 	u, err := s.db.GetUserFromUsername(username)
@@ -265,10 +263,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) isUsernameAvailable(username string) bool {
 	_, err := s.db.GetUserFromUsername(username)
-	if err != nil {
-		return true
-	}
-	return false
+	return err != nil
 }
 
 func (s *Server) registerGet(w http.ResponseWriter, r *http.Request) {
@@ -282,12 +277,6 @@ func (s *Server) registerUser(username string, email string, hashedPassword stri
 	}
 	middleware.UsersRegistered.Inc()
 	return true
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
@@ -487,11 +476,7 @@ func (s *Server) followUsernameGet(w http.ResponseWriter, r *http.Request, userI
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userID, userIDErr := s.getUserIDFromUrl(r)
-	if userIDErr != nil || userID == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+
 	followers, err := s.db.GetFollowers(userID, int(noFollowers))
 	if err != nil {
 		panic(err)

@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	wd, err = os.Getwd()
-	wdsrc   = wd + "/src/"
+	wd, _ = os.Getwd()
+	wdsrc = wd + "/src/"
 )
 
 var rootpath = cleanWD(wdsrc)
@@ -26,7 +26,8 @@ var (
 
 // GetTemplate returns executable template with header and footer
 func GetTemplate(route string) *html.Template {
-	return template.Must(template.ParseFiles(route, Layout, Footer))
+	templ, err := template.ParseFiles(route, Layout, Footer)
+	return template.Must(templ, err)
 }
 
 func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {

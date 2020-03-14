@@ -28,7 +28,7 @@ func (d *Database) AddFollower(whoID, whomID int) error {
 	if !f.IsValidRelation() {
 		return d.db.Create(&types.Follower{WhoID: whoID, WhomID: whomID}).Error
 	}
-	return fmt.Errorf("Already following this user")
+	return fmt.Errorf("already following this user")
 }
 
 func (d *Database) DeleteFollower(whoID, whomID int) error {

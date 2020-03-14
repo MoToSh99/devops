@@ -111,11 +111,10 @@ func TestLoginLogout(t *testing.T) {
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	response2 := logout(serverInstance)
-	html := getHTMLTemplate(t, response2)
 	assert.Equal(t, 302, response2.Code, "Status found")
 
 	response3 := login("user1", "wrongpassword", serverInstance)
-	html = getHTMLTemplate(t, response3)
+	html := getHTMLTemplate(t, response3)
 	assert.True(t, true, strings.Contains(html, ("Invalid password")))
 
 	response4 := login("user2", "wrongpassword", serverInstance)
@@ -161,7 +160,6 @@ func TestTimelines(t *testing.T) {
 	assert.True(t, true, strings.Contains(html, "the message by user1"))
 
 	response = logout(serverInstance)
-	html = getHTMLTemplate(t, response)
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	//user2
@@ -187,7 +185,6 @@ func TestTimelines(t *testing.T) {
 	request, _ = http.NewRequest("GET", "/user1/unfollow", nil)
 	response = *httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(&response, request)
-	html = getHTMLTemplate(t, response)
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	serverInstance.ShutDown()
