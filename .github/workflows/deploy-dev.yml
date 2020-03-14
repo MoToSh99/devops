@@ -4,48 +4,78 @@ on:
     branches:
       - develop
 jobs:
-  test:
+  test-linter:
     runs-on: ubuntu-latest
-    name: Test
+    name: Linter
     steps:
     - uses: actions/checkout@master
-    - name: Linter
+    - name: linter
       uses: shoukoo/golang-pipeline/go1.13/linter@master
       env:
         PROJECT_PATH: "./app/"
-    - name: Test
+  unit-test:
+    runs-on: ubuntu-latest
+    name: UnitTest
+    steps:
+    - uses: actions/checkout@master
+    - name: unittest
       uses: shoukoo/golang-pipeline/go1.13/test@master
       env:
         PROJECT_PATH: "./app/"
-    - name: Imports
+  import-test:
+    runs-on: ubuntu-latest
+    name: ImportCheck
+    steps:
+    - uses: actions/checkout@master
+    - name: importcheck
       uses: grandcolline/golang-github-actions@v1.1.0
       env:
         PROJECT_PATH: "./app/"
       with:
         run: imports
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: ErrCheck
+  error-check:
+    runs-on: ubuntu-latest
+    name: ErrorCheck
+    steps:
+    - uses: actions/checkout@master
+    - name: errorcheck
       uses: grandcolline/golang-github-actions@v1.1.0
       env:
         PROJECT_PATH: "./app/"
       with:
         run: errcheck
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Shadow
+  shadow-check:
+    runs-on: ubuntu-latest
+    name: ShadowCheck
+    steps:
+    - uses: actions/checkout@master
+    - name: shadowcheck
       uses: grandcolline/golang-github-actions@v1.1.0
       env:
         PROJECT_PATH: "./app/"
       with:
         run: shadow
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: StaticCheck
+  static-check:
+    runs-on: ubuntu-latest
+    name: StaticCheck
+    steps:
+    - uses: actions/checkout@master
+    - name: staticcheck
       uses: grandcolline/golang-github-actions@v1.1.0
       env:
         PROJECT_PATH: "./app/"
       with:
         run: staticcheck
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: SecurityCheck
+  security-check:
+    runs-on: ubuntu-latest
+    name: SecurityCheck
+    steps:
+    - uses: actions/checkout@master
+    - name: securitycheck
       uses: grandcolline/golang-github-actions@v1.1.0
       env:
         PROJECT_PATH: "./app/"
@@ -54,6 +84,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         flags: "-exclude=G104"
   deploy:
+    needs: [security-check, static-check, shadow-check, error-check, import-test, unit-test, test-linter]
     runs-on: ubuntu-latest
     name: Deploy
     steps:
@@ -82,6 +113,7 @@ jobs:
          docker-compose -f docker-compose.dev.yaml pull
          docker-compose -f docker-compose.dev.yaml up -d
   integration-test:
+    needs: [deploy]
     runs-on: ubuntu-latest
     name: IntegrationTest
     steps:
