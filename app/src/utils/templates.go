@@ -37,8 +37,7 @@ func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {
 func cleanWD(wd string) string {
 	suffix := "/src/src/"
 	if strings.HasSuffix(wd, suffix) {
-		wd := wd[:len(wd)-4]
-		return wd
+		return wd[:len(wd)-4]
 	} else {
 		return wd
 	}
