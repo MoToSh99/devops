@@ -2,7 +2,6 @@ package utils
 
 import (
 	"html/template"
-	html "html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -24,15 +23,10 @@ var (
 	Timeline = staticRootPath + "/templates/timeline.html"
 )
 
-// GetTemplate returns executable template with header and footer
-func GetTemplate(route string) *html.Template {
-	templ, err := template.ParseFiles(route, Layout, Footer)
-	return template.Must(templ, err)
-}
-
 func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {
-	tmpl := GetTemplate(route)
-	tmpl.Execute(w, data)
+	templ, err := template.ParseFiles(route, Layout, Footer)
+	templ = template.Must(templ, err)
+	templ.Execute(w, data)
 }
 
 func cleanWD(wd string) string {
