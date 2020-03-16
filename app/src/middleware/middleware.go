@@ -21,6 +21,7 @@ func (lrw *responseCodeMonitorWriter) monitor() {
 	HTTPResponses.Observe(float64(lrw.statusCode))
 }
 
+//Combine Combines 1 or more middlewares, applied in the given order.
 func Combine(funcs ...middleware) middleware {
 	return func(f handler) handler {
 		for _, m := range funcs {

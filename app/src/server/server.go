@@ -11,25 +11,30 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+//Server The HTTP webserver
 type Server struct {
 	db     *database.Database
 	Router *mux.Router
 }
 
+//New Creates a new instance of a server given an instance of a database.
 func New(db *database.Database) *Server {
 	s := &Server{db: db}
 	s.Router = s.InitRouter()
 	return s
 }
 
+//Serve Exposes the server on the given port.
 func (s *Server) Serve(port int) {
 	http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
 }
 
+//ShutDown Closes and cleans up server, including database
 func (s *Server) ShutDown() {
 	s.db.CloseDatabase()
 }
 
+//CreateNewServer Creates a new instance of the web server and connects the database
 func CreateNewServer(databaseDialect, connectionString string) *Server {
 	db, err := database.ConnectDatabase(databaseDialect, connectionString)
 	if err != nil {
@@ -44,6 +49,7 @@ var monitorMiddleware = middleware.Combine(
 	middleware.HTTPRequestCountMonitor,
 )
 
+//InitRouter Initialises the HTTP routes on the server.
 func (s *Server) InitRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.PathPrefix("/css/").Handler(
