@@ -34,6 +34,7 @@ jobs:
         run: errcheck
         token: ${{ secrets.GITHUB_TOKEN }}
         directory: "./app/"
+        flags: "-ignoretests -ignore 'encoding/json'"
   shadow-check:
     runs-on: ubuntu-latest
     name: ShadowCheck
