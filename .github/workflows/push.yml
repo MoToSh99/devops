@@ -67,5 +67,5 @@ jobs:
       with:
         run: sec
         token: ${{ secrets.GITHUB_TOKEN }}
-        flags: "-exclude=G104,G401,G501"
+        flags: "-exclude=G104"
         directory: "./app/"

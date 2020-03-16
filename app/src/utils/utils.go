@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"crypto/md5"
+	"crypto/md5" /* #nosec G501 */
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -34,7 +34,7 @@ func FormatDatetime(timestamp string) string {
 
 func GravatarURL(email string, size int) string {
 	cleanedEmail := strings.ToLower(strings.TrimSpace(email))
-	hash := md5.Sum([]byte(cleanedEmail))
+	hash := md5.Sum([]byte(cleanedEmail)) /* #nosec G401 */
 	hex := hex.EncodeToString(hash[:])
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", hex, size)
 }
