@@ -65,7 +65,7 @@ jobs:
       with:
         run: sec
         token: ${{ secrets.GITHUB_TOKEN }}
-        flags: "-exclude=G104"
+        flags: "-exclude=G104,G401,G501"
         directory: "./app/"
   deploy:
     needs: [security-check, static-check, shadow-check, error-check, import-test, unit-test, test-linter]
