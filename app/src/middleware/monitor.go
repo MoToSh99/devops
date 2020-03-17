@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+//HTTPResponses A Prometheus histogram for recording HTTP response code.
 var HTTPResponses = promauto.NewHistogram(prometheus.HistogramOpts{
 	Subsystem: "minitwit",
 	Name:      "http_responses",
@@ -20,6 +21,7 @@ var HTTPResponses = promauto.NewHistogram(prometheus.HistogramOpts{
 	},
 })
 
+//ResponseTime A Prometheus histogram for recording request response times.
 var ResponseTime = promauto.NewHistogram(prometheus.HistogramOpts{
 	Subsystem: "minitwit",
 	Name:      "response_time_ms",
@@ -29,48 +31,56 @@ var ResponseTime = promauto.NewHistogram(prometheus.HistogramOpts{
 	},
 })
 
+//RequestsLast5Min A Prometheus gauge for recoding amount requests last 5 min.
 var RequestsLast5Min = promauto.NewGauge(prometheus.GaugeOpts{
 	Subsystem: "minitwit",
 	Name:      "requests_last_5_min",
 	Help:      "The number of requests received by the website within the last 5 minutes",
 })
 
+//RequestsLast15Min A Prometheus gauge for recoding amount requests last 15 min.
 var RequestsLast15Min = promauto.NewGauge(prometheus.GaugeOpts{
 	Subsystem: "minitwit",
 	Name:      "requests_last_15_min",
 	Help:      "The number of requests received by the website within the last 15 minutes",
 })
 
+//RequestsLast60Min A Prometheus gauge for recoding amount requests last 60 min.
 var RequestsLast60Min = promauto.NewGauge(prometheus.GaugeOpts{
 	Subsystem: "minitwit",
 	Name:      "requests_last_60_min",
 	Help:      "The number of requests received by the website within the last 60 minutes",
 })
 
+//MessagesSent A Prometheus counter for recording the total amount of messages sent on the site.
 var MessagesSent = promauto.NewCounter(prometheus.CounterOpts{
 	Subsystem: "minitwit",
 	Name:      "messages_sent",
 	Help:      "The number of messages sent by users on the website.",
 })
 
+//UsersRegistered A Prometheus counter for recording the total amount of registered users on the site.
 var UsersRegistered = promauto.NewCounter(prometheus.CounterOpts{
 	Subsystem: "minitwit",
 	Name:      "users_registered",
 	Help:      "The number of users registered on the website.",
 })
 
+//UsersFollowed A Prometheus counter for recording the total amount of user follow actions on the site.
 var UsersFollowed = promauto.NewCounter(prometheus.CounterOpts{
 	Subsystem: "minitwit",
 	Name:      "users_followed",
 	Help:      "The number of times a user has followed another user. Note that follow, unfollow, follow counts twice.",
 })
 
+//UsersUnfollowed A Prometheus counter for recording the total amount of user unfollow actions on the site.
 var UsersUnfollowed = promauto.NewCounter(prometheus.CounterOpts{
 	Subsystem: "minitwit",
 	Name:      "users_unfollowed",
 	Help:      "The number of times a user has unfollowed another user. Note that unfollow, follow, unfollow counts twice.",
 })
 
+//HTTPResponseCodeMonitor Middleware for recording HTTP response codes.
 func HTTPResponseCodeMonitor(f handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		writer := &responseCodeMonitorWriter{
@@ -81,6 +91,7 @@ func HTTPResponseCodeMonitor(f handler) handler {
 	}
 }
 
+//HTTPResponseTimeMonitor Middleware for recording reponse times.
 func HTTPResponseTimeMonitor(f handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -92,6 +103,7 @@ func HTTPResponseTimeMonitor(f handler) handler {
 
 var requests []time.Time
 
+//HTTPRequestCountMonitor Middleware for recording incoming requests.
 func HTTPRequestCountMonitor(f handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, time.Now())
@@ -99,6 +111,7 @@ func HTTPRequestCountMonitor(f handler) handler {
 	}
 }
 
+//HTTPRequestCounter A blocking function that keeps track of requests recorded by HTTPRequestCountMonitor and reports them to Prometheus. Never returns!
 func HTTPRequestCounter() {
 	for {
 		var tmp5 []time.Time

@@ -1,11 +1,13 @@
 package types
 
+//TweetResponse A struct for holding the HTTP response for a tweet request from the simulator.
 type TweetResponse struct {
-	Content  string
+	Content string
 	PubDate string `json:"Pub_date"`
-	User     string
+	User    string
 }
 
+//ConvertToTweetResponse converts a slice of MessageViewData to a slice of TweetResponse.
 func ConvertToTweetResponse(tweets []MessageViewData) []TweetResponse {
 	var convertedMsgs []TweetResponse
 
