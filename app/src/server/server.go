@@ -26,8 +26,9 @@ func (s *Server) Serve(port int) error {
 	return http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
 }
 
-func (s *Server) ShutDown() error {
-	return s.db.CloseDatabase()
+func (s *Server) ShutDown() {
+	s.db.CloseDatabase()
+
 }
 
 func CreateNewServer(databaseDialect, connectionString string) *Server {

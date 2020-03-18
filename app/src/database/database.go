@@ -15,8 +15,9 @@ func New(gdb *gorm.DB) *Database {
 	return &Database{db: gdb}
 }
 
-func (d *Database) CloseDatabase() error {
-	return d.db.Close()
+func (d *Database) CloseDatabase() {
+	err := d.db.Close()
+	panic(err)
 }
 
 func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
