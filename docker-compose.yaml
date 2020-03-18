@@ -1,4 +1,4 @@
-version: "3"
+version: "2.1"
 services:
   database:
     image: postgres
@@ -10,6 +10,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - 5432:5432
   #pgadmin:
@@ -37,7 +42,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     depends_on:
-      - database
+      database:
+        condition: service_healthy
   nginx:
     image: nginx:1.17
     container_name: reverse-proxy

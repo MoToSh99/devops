@@ -8,7 +8,6 @@ COPY src .
 WORKDIR /devops
 COPY go.mod .
 COPY go.sum .
-COPY wait-for-it.sh .
 
 RUN go mod download
 
@@ -20,10 +19,6 @@ WORKDIR /usr/bin
 
 COPY --from=build /devops/src/static /usr/bin/src/static
 COPY --from=build /devops/bin /go/bin
-COPY --from=build /devops /usr/bin
-
-RUN chmod +x wait-for-it.sh
-RUN apk add --update bash
-
 EXPOSE 5000
-ENTRYPOINT ["./wait-for-it.sh", "127.0.0.1:5432", "--", "/go/bin/web-app"]
+
+ENTRYPOINT ["/go/bin/web-app"]
