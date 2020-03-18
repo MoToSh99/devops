@@ -15,13 +15,16 @@ func New(gdb *gorm.DB) *Database {
 	return &Database{db: gdb}
 }
 
-func (d *Database) CloseDatabase() {
-	d.db.Close()
+func (d *Database) CloseDatabase() error {
+	return d.db.Close()
 }
 
 func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
 	db, err := gorm.Open(databaseDialect, connectionString)
-	autoMigrate(db)
+	if err != nil {
+		return nil, err
+	}
+	err = autoMigrate(db)
 	return New(db), err
 }
 
