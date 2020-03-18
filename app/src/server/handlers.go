@@ -312,15 +312,15 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if usernameFromForm == "" {
-		errorMsg = utils.ENTER_A_USERNAME
+		errorMsg = utils.EnterAUsername
 	} else if r.FormValue("email") == "" || !strings.Contains(r.FormValue("email"), "@") {
-		errorMsg = utils.ENTER_A_VALID_EMAIL
+		errorMsg = utils.EnterAValidEmail
 	} else if r.FormValue("password") == "" {
-		errorMsg = utils.YOU_HAVE_TO_ENTER_A_PASSWORD
+		errorMsg = utils.YouHaveToEnterAPassword
 	} else if r.FormValue("password") != r.FormValue("password2") {
-		errorMsg = utils.PASSWORDS_DOES_NOT_MATCH_MESSAGE
+		errorMsg = utils.PasswordDoesNotMatchMessage
 	} else if !s.isUsernameAvailable(r.FormValue("username")) {
-		errorMsg = utils.USERNAME_TAKEN
+		errorMsg = utils.UsernameTaken
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
 		s.registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
@@ -354,13 +354,13 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 	}
 	error := ""
 	if registerRequest.Username == "" {
-		error = utils.ENTER_A_USERNAME
+		error = utils.EnterAUsername
 	} else if registerRequest.Email == "" || !strings.Contains(registerRequest.Email, "@") {
-		error = utils.ENTER_A_VALID_EMAIL
+		error = utils.EnterAValidEmail
 	} else if registerRequest.Pwd == "" {
-		error = utils.YOU_HAVE_TO_ENTER_A_PASSWORD
+		error = utils.YouHaveToEnterAPassword
 	} else if !s.isUsernameAvailable(registerRequest.Username) {
-		error = utils.USERNAME_TAKEN
+		error = utils.UsernameTaken
 	}
 	if error != "" {
 		w.WriteHeader(http.StatusBadRequest)

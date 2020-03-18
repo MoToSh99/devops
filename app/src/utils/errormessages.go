@@ -1,9 +1,14 @@
 package utils
 
 const (
-	USERNAME_TAKEN                   = "The username is already taken"
-	PASSWORDS_DOES_NOT_MATCH_MESSAGE = "The two passwords do not match"
-	YOU_HAVE_TO_ENTER_A_PASSWORD     = "You have to enter a password" /* #nosec G101 */
-	ENTER_A_VALID_EMAIL              = "You have to enter a valid email address"
-	ENTER_A_USERNAME                 = "You have to enter a username"
+	//UsernameTaken Error message for when username is already taken.
+	UsernameTaken = "The username is already taken"
+	//PasswordDoesNotMatchMessage Error message for when the user failed to provide the same password twice.
+	PasswordDoesNotMatchMessage = "The two passwords do not match"
+	//YouHaveToEnterAPassword Error message for when no password was provided.
+	YouHaveToEnterAPassword = "You have to enter a password"
+	//EnterAValidEmail Error message for when the provided email address is not valid.
+	EnterAValidEmail = "You have to enter a valid email address"
+	//EnterAUsername Error message for when no username was provided
+	EnterAUsername = "You have to enter a username"
 )
