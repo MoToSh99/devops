@@ -358,8 +358,6 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 		return
 	}
 	w.WriteHeader(http.StatusInternalServerError)
-	return
-
 }
 
 func (s *Server) getUserIDFromUrl(r *http.Request) (int, error) {
