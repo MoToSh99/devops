@@ -9,9 +9,20 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - "/minitwit_db:/var/lib/postgresql/data"
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+  #pgadmin:
+  #  image: dpage/pgadmin4
+  #  restart: unless-stopped
+  #  network_mode: host
+  #  environment:
+  #    PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+  #    PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+  #  volumes:
+  #    - pgadmin:/root/.pgadmin
+  #  ports:
+  #    - "5050:80"
   go-web-app:
     restart: unless-stopped
     container_name: app
@@ -28,12 +39,18 @@ services:
     depends_on:
       - database
   nginx:
-     image: nginx:1.17
-     container_name: reverse-proxy
-     restart: unless-stopped
-     network_mode: host
-     ports:
-       - "80:80"
-       - "443:443"
-     volumes:
-       - ./nginx:/etc/nginx/
+    image: nginx:1.17
+    container_name: reverse-proxy
+    restart: unless-stopped
+    network_mode: host
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/
+    depends_on:
+      - go-web-app
+
+volumes:
+  postgres_data:
+  pgadmin:
