@@ -76,7 +76,6 @@ func initServer() *server.Server {
 	err := os.Remove("/tmp/minitwit_test.db")
 	if err != nil {
 		panic(err)
-		return
 	}
 	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
 }
