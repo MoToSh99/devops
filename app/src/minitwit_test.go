@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -74,8 +75,8 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 
 func initServer() *server.Server {
 	err := os.Remove("/tmp/minitwit_test.db")
-	if err != nil {
-		//No database to remove - we good
+	if err == nil {
+		fmt.Println("Database removed")
 	}
 	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
 }
