@@ -73,7 +73,11 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 }
 
 func initServer() *server.Server {
-	os.Remove("/tmp/minitwit_test.db")
+	err := os.Remove("/tmp/minitwit_test.db")
+	if err != nil {
+		panic(err)
+		return
+	}
 	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
 }
 
