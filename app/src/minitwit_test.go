@@ -76,7 +76,7 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 func initServer() *server.Server {
 	err := os.Remove("/tmp/minitwit_test.db")
 	if err == nil {
-		fmt.Println("Database removed")
+		fmt.Println("Test database removed")
 	}
 	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
 }

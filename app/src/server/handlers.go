@@ -306,6 +306,8 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	err := decoder.Decode(&registerRequest)
+	fmt.Println(err)
+	fmt.Println(registerRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
