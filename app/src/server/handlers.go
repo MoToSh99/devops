@@ -306,11 +306,7 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	err := decoder.Decode(&registerRequest)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
+	if err != nil && registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
 		s.registerPostFromJson(w, r, registerRequest)
 		return
 	}
