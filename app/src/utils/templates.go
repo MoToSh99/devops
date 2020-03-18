@@ -23,10 +23,11 @@ var (
 	Timeline = staticRootPath + "/templates/timeline.html"
 )
 
-func RenderTemplate(w http.ResponseWriter, route string, data interface{}) {
+func RenderTemplate(w http.ResponseWriter, route string, data interface{}) error {
 	templ, err := template.ParseFiles(route, Layout, Footer)
 	templ = template.Must(templ, err)
-	templ.Execute(w, data)
+	err = templ.Execute(w, data)
+	return err
 }
 
 func cleanWD(wd string) string {

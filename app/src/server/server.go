@@ -22,8 +22,8 @@ func New(db *database.Database) *Server {
 	return s
 }
 
-func (s *Server) Serve(port int) {
-	http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
+func (s *Server) Serve(port int) error {
+	return http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
 }
 
 func (s *Server) ShutDown() error {

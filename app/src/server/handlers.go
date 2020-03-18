@@ -45,7 +45,10 @@ func (s *Server) timeline(w http.ResponseWriter, r *http.Request) {
 		HasError:        false,
 		ErrorMsg:        "",
 	}
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +74,10 @@ func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 		data.SessionUser = username
 	}
 
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +99,10 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 			HasError:        true,
 			ErrorMsg:        "Sorry! We could not find the user.",
 		}
-		utils.RenderTemplate(w, utils.Timeline, error_response)
+		err = utils.RenderTemplate(w, utils.Timeline, error_response)
+		if err != nil {
+			panic(err)
+		}
 		return
 	} else if err != nil {
 		panic(err)
@@ -121,7 +130,10 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 		ErrorMsg:        "",
 	}
 
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) followUser(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +198,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) loginGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.Login, nil)
+	err := utils.RenderTemplate(w, utils.Login, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
@@ -215,7 +230,10 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 		data.HasError = true
 		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
-		utils.RenderTemplate(w, utils.Login, data)
+		err := utils.RenderTemplate(w, utils.Login, data)
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
@@ -267,7 +285,10 @@ func (s *Server) isUsernameAvailable(username string) bool {
 }
 
 func (s *Server) registerGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.Register, nil)
+	err := utils.RenderTemplate(w, utils.Register, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) registerUser(username string, email string, hashedPassword string) bool {
@@ -314,7 +335,10 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 			ErrorMsg   string
 			IsLoggedIn bool
 		}{true, errorMsg, false}
-		utils.RenderTemplate(w, utils.Register, data)
+		err = utils.RenderTemplate(w, utils.Register, data)
+		if err != nil {
+			panic(err)
+		}
 
 	} else {
 		http.Redirect(w, r, "/login", http.StatusFound)
