@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
 
@@ -27,6 +28,8 @@ func getHTMLTemplate(t *testing.T, resp httptest.ResponseRecorder) string {
 
 func register(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
+	gob.Register(&types.User{})
+
 	if password2 == "" {
 		password2 = password
 	}
@@ -49,6 +52,7 @@ func login(username string, password string, serverInstance *server.Server) http
 
 func registerAndLogin(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
+	gob.Register(&types.User{})
 	request, _ := http.NewRequest("POST", "/register?username="+username+"&email="+email+"&password="+password+"&password2="+password2, strings.NewReader(form.Encode()))
 	response := httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(response, request)
@@ -73,8 +77,21 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 }
 
 func initServer() *server.Server {
-	os.Remove("/tmp/minitwit_test.db")
-	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+	connectionString := "host=127.0.0.1 port=5432 user=postgres dbname=minitwit_test password=postgres sslmode=disable"
+	clearDatabase(connectionString)
+	s := server.CreateNewServer("postgres", connectionString)
+	return s
+}
+
+func clearDatabase(connectionString string) {
+	db, err := gorm.Open("postgres", connectionString)
+	if err != nil {
+		panic(err)
+	}
+	db.Delete(&types.User{})
+	db.Delete(&types.Follower{})
+	db.Delete(&types.Message{})
+	db.Delete(&types.LatestResponse{})
 }
 
 func TestRegister(t *testing.T) {
@@ -106,7 +123,6 @@ func TestRegister(t *testing.T) {
 func TestLoginLogout(t *testing.T) {
 	serverInstance := initServer()
 
-	gob.Register(&types.User{})
 	response := registerAndLogin("user1", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
