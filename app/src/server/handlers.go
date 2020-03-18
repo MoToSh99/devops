@@ -45,7 +45,10 @@ func (s *Server) timeline(w http.ResponseWriter, r *http.Request) {
 		HasError:        false,
 		ErrorMsg:        "",
 	}
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +74,10 @@ func (s *Server) publicTimeline(w http.ResponseWriter, r *http.Request) {
 		data.SessionUser = username
 	}
 
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +99,10 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 			HasError:        true,
 			ErrorMsg:        "Sorry! We could not find the user.",
 		}
-		utils.RenderTemplate(w, utils.Timeline, error_response)
+		err = utils.RenderTemplate(w, utils.Timeline, error_response)
+		if err != nil {
+			panic(err)
+		}
 		return
 	} else if err != nil {
 		panic(err)
@@ -121,7 +130,10 @@ func (s *Server) userTimeline(w http.ResponseWriter, r *http.Request) {
 		ErrorMsg:        "",
 	}
 
-	utils.RenderTemplate(w, utils.Timeline, data)
+	err = utils.RenderTemplate(w, utils.Timeline, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) followUser(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +198,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) loginGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.Login, nil)
+	err := utils.RenderTemplate(w, utils.Login, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
@@ -215,7 +230,10 @@ func (s *Server) loginPost(w http.ResponseWriter, r *http.Request) {
 		data.HasError = true
 		data.ErrorMsg = "Invalid password"
 		data.IsLoggedIn = false
-		utils.RenderTemplate(w, utils.Login, data)
+		err := utils.RenderTemplate(w, utils.Login, data)
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
@@ -267,7 +285,10 @@ func (s *Server) isUsernameAvailable(username string) bool {
 }
 
 func (s *Server) registerGet(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, utils.Register, nil)
+	err := utils.RenderTemplate(w, utils.Register, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) registerUser(username string, email string, hashedPassword string) bool {
@@ -284,8 +305,8 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 	errorMsg := ""
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
-	decoder.Decode(&registerRequest)
-	if registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
+	err := decoder.Decode(&registerRequest)
+	if err != nil && registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
 		s.registerPostFromJson(w, r, registerRequest)
 		return
 	}
@@ -310,7 +331,10 @@ func (s *Server) registerPost(w http.ResponseWriter, r *http.Request) {
 			ErrorMsg   string
 			IsLoggedIn bool
 		}{true, errorMsg, false}
-		utils.RenderTemplate(w, utils.Register, data)
+		err = utils.RenderTemplate(w, utils.Register, data)
+		if err != nil {
+			panic(err)
+		}
 
 	} else {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -323,7 +347,11 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	s.db.SetLatest(latest)
+	err := s.db.SetLatest(latest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	error := ""
 	if registerRequest.Username == "" {
 		error = utils.ENTER_A_USERNAME
@@ -337,18 +365,19 @@ func (s *Server) registerPostFromJson(w http.ResponseWriter, r *http.Request, re
 	if error != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
-		return
-	} else {
-		res := s.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
-		if res {
-			w.WriteHeader(http.StatusNoContent)
+		err = json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	res := s.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
+	if res {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
 func (s *Server) getUserIDFromUrl(r *http.Request) (int, error) {
@@ -363,17 +392,24 @@ func (s *Server) tweetsGet(w http.ResponseWriter, r *http.Request) {
 	if latestErr != nil || noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else {
-		s.db.SetLatest(latest)
-		messages, err := s.db.GetPublicViewMessages(int(noMsgs))
-		if err != nil {
-			panic(err)
-		}
+	}
+	setLatestError := s.db.SetLatest(latest)
+	if setLatestError != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	messages, err := s.db.GetPublicViewMessages(int(noMsgs))
+	if err != nil {
+		panic(err)
+	}
 
-		filteredMsgs := types.ConvertToTweetResponse(messages)
+	filteredMsgs := types.ConvertToTweetResponse(messages)
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filteredMsgs)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(filteredMsgs)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -397,18 +433,24 @@ func (s *Server) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
-	} else {
+	}
+	setLatestError := s.db.SetLatest(latest)
+	if setLatestError != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	messages, err := s.db.GetUserViewMessages(userID, int(noMsgs))
+	if err != nil {
+		panic(err)
+	}
 
-		s.db.SetLatest(latest)
-		messages, err := s.db.GetUserViewMessages(userID, int(noMsgs))
-		if err != nil {
-			panic(err)
-		}
+	filteredMsgs := types.ConvertToTweetResponse(messages)
 
-		filteredMsgs := types.ConvertToTweetResponse(messages)
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filteredMsgs)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(filteredMsgs)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -443,7 +485,11 @@ func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	s.db.SetLatest(latest)
+	err := s.db.SetLatest(latest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	userID, userIDErr := s.getUserIDFromUrl(r)
 	if userIDErr != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -455,8 +501,8 @@ func (s *Server) followUsername(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 		decoder := json.NewDecoder(r.Body)
 		var followRequest types.FollowRequest
-		decoder.Decode(&followRequest)
-		if followRequest.Follow == "" && followRequest.Unfollow == "" {
+		err = decoder.Decode(&followRequest)
+		if err != nil || followRequest.Follow == "" && followRequest.Unfollow == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -483,7 +529,11 @@ func (s *Server) followUsernameGet(w http.ResponseWriter, r *http.Request, userI
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(followers)
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
@@ -525,5 +575,9 @@ func (s *Server) latest(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(l)
+	err = json.NewEncoder(w).Encode(l)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
