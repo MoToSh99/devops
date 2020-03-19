@@ -34,7 +34,12 @@ func (c *Controller) tweetsGet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		c.DB.SetLatest(latest)
+		err := c.DB.SetLatest(latest)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		messages, err := c.DB.GetPublicViewMessages(int(noMsgs))
 		if err != nil {
 			panic(err)
@@ -43,7 +48,12 @@ func (c *Controller) tweetsGet(w http.ResponseWriter, r *http.Request) {
 		filteredMsgs := types.ConvertToTweetResponse(messages)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filteredMsgs)
+
+		err = json.NewEncoder(w).Encode(filteredMsgs)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -68,8 +78,12 @@ func (c *Controller) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
+		err := c.DB.SetLatest(latest)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-		c.DB.SetLatest(latest)
 		messages, err := c.DB.GetUserViewMessages(userID, int(noMsgs))
 		if err != nil {
 			panic(err)
@@ -78,7 +92,11 @@ func (c *Controller) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 		filteredMsgs := types.ConvertToTweetResponse(messages)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filteredMsgs)
+		err = json.NewEncoder(w).Encode(filteredMsgs)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -113,7 +131,13 @@ func (c *Controller) followUsername(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c.DB.SetLatest(latest)
+
+	err := c.DB.SetLatest(latest)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	userID, userIDErr := c.getUserIDFromUrl(r)
 	if userIDErr != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -125,8 +149,8 @@ func (c *Controller) followUsername(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 		decoder := json.NewDecoder(r.Body)
 		var followRequest types.FollowRequest
-		decoder.Decode(&followRequest)
-		if followRequest.Follow == "" && followRequest.Unfollow == "" {
+		err = decoder.Decode(&followRequest)
+		if err != nil || (followRequest.Follow == "" && followRequest.Unfollow == "") {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -153,7 +177,11 @@ func (c *Controller) followUsernameGet(w http.ResponseWriter, r *http.Request, u
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(followers)
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *Controller) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
@@ -195,14 +223,18 @@ func (c *Controller) latest(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(l)
+	err = json.NewEncoder(w).Encode(l)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
-	decoder.Decode(&registerRequest)
-	if registerRequest == (types.RegisterRequest{}) {
+	err := decoder.Decode(&registerRequest)
+	if err != nil || registerRequest == (types.RegisterRequest{}) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -212,7 +244,11 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c.DB.SetLatest(latest)
+	err = c.DB.SetLatest(latest)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	error := ""
 	if registerRequest.Username == "" {
 		error = utils.EnterAUsername
@@ -226,7 +262,10 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	if error != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
+		err = json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	} else {
 		res := c.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
