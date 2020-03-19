@@ -15,5 +15,8 @@ func main() {
 	s := server.CreateNewServer("sqlite3", "/tmp/minitwit.db")
 	defer s.ShutDown()
 	go middleware.HTTPRequestCounter()
-	s.Serve(5000)
+	err := s.Serve(5000)
+	if err != nil {
+		panic(err)
+	}
 }
