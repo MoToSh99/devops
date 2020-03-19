@@ -33,3 +33,8 @@ func Combine(funcs ...Middleware) Middleware {
 		return f
 	}
 }
+
+//Unit A unit middleware that does nothing
+func Unit(f Handler) Handler {
+	return f
+}
