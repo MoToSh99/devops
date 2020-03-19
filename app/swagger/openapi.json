@@ -50,7 +50,7 @@
         },
         "responses": {
           "204": {
-            "description": "User registered (No content)"
+            "description": "User registered"
           },
           "400": {
             "description": "Error with provided data",
@@ -67,7 +67,7 @@
     },
     "/simulator/msgs": {
       "get": {
-        "summary": "Get number of messages from system",
+        "summary": "Get posted messages",
         "parameters": [
           {
             "name": "no",
@@ -129,7 +129,7 @@
           {
             "name": "no",
             "in": "query",
-            "description": "pass an optional search string for looking up inventory",
+            "description": "max number of messages returned",
             "required": true,
             "style": "form",
             "explode": true,
@@ -172,7 +172,7 @@
           {
             "name": "username",
             "in": "path",
-            "description": "username to be the author of the message",
+            "description": "username which will be the author of the message",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -226,7 +226,7 @@
           {
             "name": "no",
             "in": "query",
-            "description": "the max number of followers you want to retrieve",
+            "description": "the max number of followers retrieved",
             "required": true,
             "style": "form",
             "explode": true,
@@ -263,13 +263,13 @@
         }
       },
       "post": {
-        "summary": "Follows a user",
-        "description": "Set a user as a follower of a provided user",
+        "summary": "Follows or unfollows a user",
+        "description": "Set a user as a follower of a provided user or unfollows",
         "parameters": [
           {
             "name": "username",
             "in": "path",
-            "description": "username of the user that wants to follow another user",
+            "description": "username of the user that wants to follow another user (or unfollow)",
             "required": true,
             "style": "simple",
             "explode": false,
