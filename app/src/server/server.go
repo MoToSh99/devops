@@ -24,8 +24,8 @@ func New(db *database.Database) *Server {
 }
 
 //Serve Exposes the server on the given port.
-func (s *Server) Serve(port int) {
-	http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
+func (s *Server) Serve(port int) error {
+	return http.ListenAndServe(":"+strconv.Itoa(port), s.Router)
 }
 
 //ShutDown Closes and cleans up server, including database
