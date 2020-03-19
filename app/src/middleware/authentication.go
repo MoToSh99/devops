@@ -7,7 +7,7 @@ import (
 )
 
 //Auth Middleware for checking that a user is logged in. Redirects to /public if not.
-func Auth(f handler) handler {
+func Auth(f Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := authentication.GetSessionValue(w, r, "user")
 		if user != nil {

@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/matt035343/devops/app/src/database"
-	"github.com/matt035343/devops/app/src/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -13,13 +12,13 @@ import (
 
 //Server The HTTP webserver
 type Server struct {
-	db     *database.Database
+	DB     *database.Database
 	Router *mux.Router
 }
 
 //New Creates a new instance of a server given an instance of a database.
 func New(db *database.Database) *Server {
-	s := &Server{db: db}
+	s := &Server{DB: db}
 	s.Router = s.InitRouter()
 	return s
 }
@@ -31,7 +30,7 @@ func (s *Server) Serve(port int) {
 
 //ShutDown Closes and cleans up server, including database
 func (s *Server) ShutDown() {
-	s.db.CloseDatabase()
+	s.DB.CloseDatabase()
 }
 
 //CreateNewServer Creates a new instance of the web server and connects the database
@@ -43,12 +42,6 @@ func CreateNewServer(databaseDialect, connectionString string) *Server {
 	return New(db)
 }
 
-var monitorMiddleware = middleware.Combine(
-	middleware.HTTPResponseCodeMonitor,
-	middleware.HTTPResponseTimeMonitor,
-	middleware.HTTPRequestCountMonitor,
-)
-
 //InitRouter Initialises the HTTP routes on the server.
 func (s *Server) InitRouter() *mux.Router {
 	r := mux.NewRouter()
@@ -58,24 +51,6 @@ func (s *Server) InitRouter() *mux.Router {
 
 	/* Monitor endpoints */
 	r.Handle("/metrics", promhttp.Handler())
-
-	/* Client endpoints */
-	r.HandleFunc("/", middleware.Auth(monitorMiddleware(s.timeline)))
-	r.HandleFunc("/public", monitorMiddleware(s.publicTimeline))
-	r.HandleFunc("/logout", monitorMiddleware(s.logout))
-	r.HandleFunc("/addMessage", monitorMiddleware(middleware.Auth(s.addMessage))).Methods("POST")
-	r.HandleFunc("/login", monitorMiddleware(s.login)).Methods("GET", "POST")
-	r.HandleFunc("/register", monitorMiddleware(s.register)).Methods("GET", "POST")
-	r.HandleFunc("/{username}", monitorMiddleware(middleware.Auth(s.userTimeline)))
-	r.HandleFunc("/{username}/follow", monitorMiddleware(middleware.Auth(s.followUser)))
-	r.HandleFunc("/{username}/unfollow", monitorMiddleware(middleware.Auth(s.unfollowUser)))
-
-	/* Simulator endpoints */
-	r.HandleFunc("/simulator/register", monitorMiddleware(s.register)).Methods("GET", "POST")
-	r.HandleFunc("/simulator/msgs", monitorMiddleware(s.tweetsGet)).Methods("Get")
-	r.HandleFunc("/simulator/msgs/{username}", monitorMiddleware(s.tweetsUsername)).Methods("GET", "POST")
-	r.HandleFunc("/simulator/fllws/{username}", monitorMiddleware(s.followUsername)).Methods("GET", "POST")
-	r.HandleFunc("/simulator/latest", monitorMiddleware(s.latest)).Methods("GET")
 
 	return r
 }
