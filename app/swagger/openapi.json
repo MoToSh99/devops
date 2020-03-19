@@ -3,7 +3,6 @@
   "info": {
     "title": "Fuldsmadder Minitwit Simualtor API",
     "description": "Fuldsmadder swag",
-    
     "version": "1.0.0"
   },
   "servers": [
