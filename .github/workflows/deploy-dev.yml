@@ -101,7 +101,8 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
         script: |
          cd ../var/www/devops/
-         rm ../../../tmp/minitwit.db
+         docker rm $(docker ps -a -q) -f
+         docker volume prune
          docker login
          ${{ secrets.DOCKER_USERNAME }}
          ${{ secrets.DOCKER_PASSWORD }}
