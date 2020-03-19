@@ -102,8 +102,13 @@ func (c *Controller) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
 	userID, userIDErr := c.getUserIDFromUrl(r)
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if latestErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -119,6 +124,7 @@ func (c *Controller) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		c.DB.SetLatest(latest)
 		middleware.MessagesSent.Inc()
 		w.WriteHeader(http.StatusNoContent)
 	}
