@@ -124,7 +124,11 @@ func (c *Controller) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		c.DB.SetLatest(latest)
+		err = c.DB.SetLatest(latest)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		middleware.MessagesSent.Inc()
 		w.WriteHeader(http.StatusNoContent)
 	}
