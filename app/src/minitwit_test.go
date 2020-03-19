@@ -13,6 +13,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
+	"github.com/matt035343/devops/app/src/utils"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -77,7 +78,8 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 }
 
 func initServer() *server.Server {
-	connectionString := "host=127.0.0.1 port=5432 user=postgres dbname=minitwit_test password=postgres sslmode=disable"
+	utils.InitEnvironmentVariables("../.env")
+	connectionString := "host=127.0.0.1 port=5432 user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
 	clearDatabase(connectionString)
 	s := server.CreateNewServer("postgres", connectionString)
 	return s
