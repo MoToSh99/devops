@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/types"
+	"github.com/matt035343/devops/app/src/utils"
 )
 
 func (c *Controller) getUserIDFromUrl(r *http.Request) (int, error) {
@@ -194,4 +196,55 @@ func (c *Controller) latest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(l)
+}
+
+func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var registerRequest types.RegisterRequest
+	decoder.Decode(&registerRequest)
+	if registerRequest == (types.RegisterRequest{}) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
+	if latestErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	c.DB.SetLatest(latest)
+	error := ""
+	if registerRequest.Username == "" {
+		error = utils.EnterAUsername
+	} else if registerRequest.Email == "" || !strings.Contains(registerRequest.Email, "@") {
+		error = utils.EnterAValidEmail
+	} else if registerRequest.Pwd == "" {
+		error = utils.YouHaveToEnterAPassword
+	} else if !c.DB.IsUsernameAvailable(registerRequest.Username) {
+		error = utils.UsernameTaken
+	}
+	if error != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
+		return
+	} else {
+		res := c.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
+		if res {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func (c *Controller) registerUser(username string, email string, hashedPassword string) bool {
+	err := c.DB.AddUser(username, email, hashedPassword)
+	if err != nil {
+		return false
+	}
+	middleware.UsersRegistered.Inc()
+	return true
 }

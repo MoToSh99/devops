@@ -17,7 +17,7 @@ func AddEndpoints(s *server.Server, routeMiddleware middleware.Middleware) {
 	r.HandleFunc("/logout", routeMiddleware(c.logout))
 	r.HandleFunc("/addMessage", routeMiddleware(middleware.Auth(c.addMessage))).Methods("POST")
 	r.HandleFunc("/login", routeMiddleware(c.login)).Methods("GET", "POST")
-	r.HandleFunc("/register", routeMiddleware(c.Register)).Methods("GET", "POST")
+	r.HandleFunc("/register", routeMiddleware(c.register)).Methods("GET", "POST")
 	r.HandleFunc("/{username}", routeMiddleware(middleware.Auth(c.userTimeline)))
 	r.HandleFunc("/{username}/follow", routeMiddleware(middleware.Auth(c.followUser)))
 	r.HandleFunc("/{username}/unfollow", routeMiddleware(middleware.Auth(c.unfollowUser)))

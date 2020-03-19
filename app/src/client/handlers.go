@@ -1,10 +1,8 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -244,19 +242,13 @@ func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//Register Handler for the register endpoint. This is exported to allow access from simulator package.
-func (c *Controller) Register(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		c.registerGet(w, r)
 	} else if r.Method == "POST" {
 		c.registerPost(w, r)
 	}
 
-}
-
-func (c *Controller) isUsernameAvailable(username string) bool {
-	_, err := c.DB.GetUserFromUsername(username)
-	return err != nil
 }
 
 func (c *Controller) registerGet(w http.ResponseWriter, r *http.Request) {
@@ -275,13 +267,6 @@ func (c *Controller) registerUser(username string, email string, hashedPassword 
 func (c *Controller) registerPost(w http.ResponseWriter, r *http.Request) {
 	usernameFromForm := r.FormValue("username")
 	errorMsg := ""
-	decoder := json.NewDecoder(r.Body)
-	var registerRequest types.RegisterRequest
-	decoder.Decode(&registerRequest)
-	if registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
-		c.registerPostFromJson(w, r, registerRequest)
-		return
-	}
 
 	if usernameFromForm == "" {
 		errorMsg = utils.EnterAUsername
@@ -291,7 +276,7 @@ func (c *Controller) registerPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = utils.YouHaveToEnterAPassword
 	} else if r.FormValue("password") != r.FormValue("password2") {
 		errorMsg = utils.PasswordDoesNotMatchMessage
-	} else if !c.isUsernameAvailable(r.FormValue("username")) {
+	} else if !c.DB.IsUsernameAvailable(r.FormValue("username")) {
 		errorMsg = utils.UsernameTaken
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
@@ -308,38 +293,4 @@ func (c *Controller) registerPost(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Redirect(w, r, "/login", http.StatusFound)
 	}
-}
-
-func (c *Controller) registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
-	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
-	if latestErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	c.DB.SetLatest(latest)
-	error := ""
-	if registerRequest.Username == "" {
-		error = utils.EnterAUsername
-	} else if registerRequest.Email == "" || !strings.Contains(registerRequest.Email, "@") {
-		error = utils.EnterAValidEmail
-	} else if registerRequest.Pwd == "" {
-		error = utils.YouHaveToEnterAPassword
-	} else if !c.isUsernameAvailable(registerRequest.Username) {
-		error = utils.UsernameTaken
-	}
-	if error != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
-		return
-	} else {
-		res := c.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
-		if res {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 }
