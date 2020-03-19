@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/matt035343/devops/app/src/database"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/matt035343/devops/app/src/database"
+	"github.com/matt035343/devops/app/src/utils"
 )
 
 const docStr = `ITU-Minitwit Tweet Flagging Tool
@@ -25,7 +27,9 @@ func main() {
 	}
 
 	arg := os.Args[1]
-	db, err := database.ConnectDatabase("sqlite3", "/tmp/minitwit.db")
+	utils.InitEnvironmentVariables()
+	connectionString := "host=127.0.0.1 port=5432 user=" + utils.GetEnvironmentVariable("POSTGRES_USER") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD") + " sslmode=disable"
+	db, err := database.ConnectDatabase("postgres", connectionString)
 	defer db.CloseDatabase()
 
 	if err != nil {
