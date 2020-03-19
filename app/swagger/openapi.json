@@ -3,9 +3,7 @@
   "info": {
     "title": "Fuldsmadder Minitwit Simualtor API",
     "description": "Fuldsmadder swag",
-    "contact": {
-      "email": "TBA@fuldersmadder.works"
-    },
+    
     "version": "1.0.0"
   },
   "servers": [
