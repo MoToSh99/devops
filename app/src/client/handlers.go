@@ -19,10 +19,10 @@ import (
 
 var perPage = 30
 
-func (s *ClientServer) timeline(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) timeline(w http.ResponseWriter, r *http.Request) {
 	user := authentication.GetSessionValue(w, r, "user").(*(types.User))
 
-	messages, err := s.DB.GetTimelineViewMessages(user.UserID, perPage)
+	messages, err := c.DB.GetTimelineViewMessages(user.UserID, perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -40,10 +40,10 @@ func (s *ClientServer) timeline(w http.ResponseWriter, r *http.Request) {
 	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
-func (s *ClientServer) publicTimeline(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) publicTimeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: " + r.RemoteAddr)
 
-	messages, err := s.DB.GetPublicViewMessages(perPage)
+	messages, err := c.DB.GetPublicViewMessages(perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -66,9 +66,9 @@ func (s *ClientServer) publicTimeline(w http.ResponseWriter, r *http.Request) {
 	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
-func (s *ClientServer) userTimeline(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) userTimeline(w http.ResponseWriter, r *http.Request) {
 	username := mux.Vars(r)["username"]
-	profile, err := s.DB.GetUserFromUsername(username)
+	profile, err := c.DB.GetUserFromUsername(username)
 	user := authentication.GetSessionValue(w, r, "user")
 
 	userID := (user.(*types.User)).UserID
@@ -91,12 +91,12 @@ func (s *ClientServer) userTimeline(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	follower, err := s.DB.GetFollower(userID, profile.UserID)
+	follower, err := c.DB.GetFollower(userID, profile.UserID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		panic(err)
 	}
 
-	messages, err := s.DB.GetUserViewMessages(profile.UserID, perPage)
+	messages, err := c.DB.GetUserViewMessages(profile.UserID, perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -116,15 +116,15 @@ func (s *ClientServer) userTimeline(w http.ResponseWriter, r *http.Request) {
 	utils.RenderTemplate(w, utils.Timeline, data)
 }
 
-func (s *ClientServer) followUser(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) followUser(w http.ResponseWriter, r *http.Request) {
 	username := mux.Vars(r)["username"]
-	user, err := s.DB.GetUserFromUsername(username)
+	user, err := c.DB.GetUserFromUsername(username)
 	if err != nil {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
 	sessionUserID := (sessionUser.(*types.User)).UserID
-	err = s.DB.AddFollower(sessionUserID, user.UserID)
+	err = c.DB.AddFollower(sessionUserID, user.UserID)
 	if err != nil {
 		panic(err)
 	}
@@ -134,15 +134,15 @@ func (s *ClientServer) followUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
-func (s *ClientServer) unfollowUser(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) unfollowUser(w http.ResponseWriter, r *http.Request) {
 	username := mux.Vars(r)["username"]
-	user, err := s.DB.GetUserFromUsername(username)
+	user, err := c.DB.GetUserFromUsername(username)
 	if err != nil {
 		http.Redirect(w, r, "/public", http.StatusNotFound)
 	}
 	sessionUser := authentication.GetSessionValue(w, r, "user")
 	sessionUserID := (sessionUser.(*types.User)).UserID
-	err = s.DB.DeleteFollower(sessionUserID, user.UserID)
+	err = c.DB.DeleteFollower(sessionUserID, user.UserID)
 	if err != nil {
 		panic(err)
 	}
@@ -152,13 +152,13 @@ func (s *ClientServer) unfollowUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (s *ClientServer) addMessage(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) addMessage(w http.ResponseWriter, r *http.Request) {
 	user := authentication.GetSessionValue(w, r, "user")
 	text := r.FormValue("text")
 	userID := (user.(*types.User)).UserID
 
 	if text != "" {
-		err := s.DB.AddMessage(userID, text, time.Now())
+		err := c.DB.AddMessage(userID, text, time.Now())
 		if err != nil {
 			panic(err)
 		}
@@ -168,20 +168,20 @@ func (s *ClientServer) addMessage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/public", http.StatusFound)
 }
 
-func (s *ClientServer) login(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		s.loginGet(w, r)
+		c.loginGet(w, r)
 	} else if r.Method == "POST" {
-		s.loginPost(w, r)
+		c.loginPost(w, r)
 	}
 
 }
 
-func (s *ClientServer) loginGet(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) loginGet(w http.ResponseWriter, r *http.Request) {
 	utils.RenderTemplate(w, utils.Login, nil)
 }
 
-func (s *ClientServer) loginPost(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) loginPost(w http.ResponseWriter, r *http.Request) {
 	errorMsg := ""
 	data := struct {
 		HasError        bool
@@ -201,7 +201,7 @@ func (s *ClientServer) loginPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = "You have to enter a password"
 	}
 
-	userFound, user := s.authenticate(username, password)
+	userFound, user := c.authenticate(username, password)
 
 	if !userFound {
 		data.HasError = true
@@ -222,8 +222,8 @@ func (s *ClientServer) loginPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *ClientServer) authenticate(username string, password string) (bool, *types.User) {
-	user, err := s.DB.GetUserFromUsername(username)
+func (c *Controller) authenticate(username string, password string) (bool, *types.User) {
+	user, err := c.DB.GetUserFromUsername(username)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		panic(err)
 	}
@@ -235,7 +235,7 @@ func (s *ClientServer) authenticate(username string, password string) (bool, *ty
 	return true, &user
 }
 
-func (s *ClientServer) logout(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 	err := authentication.ClearSession(w, r)
 	if err != nil {
 		panic(err)
@@ -244,27 +244,27 @@ func (s *ClientServer) logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//Register Handler for the register endpoint
-func (s *ClientServer) Register(w http.ResponseWriter, r *http.Request) {
+//Register Handler for the register endpoint. This is exported to allow access from simulator package.
+func (c *Controller) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		s.registerGet(w, r)
+		c.registerGet(w, r)
 	} else if r.Method == "POST" {
-		s.registerPost(w, r)
+		c.registerPost(w, r)
 	}
 
 }
 
-func (s *ClientServer) isUsernameAvailable(username string) bool {
-	_, err := s.DB.GetUserFromUsername(username)
+func (c *Controller) isUsernameAvailable(username string) bool {
+	_, err := c.DB.GetUserFromUsername(username)
 	return err != nil
 }
 
-func (s *ClientServer) registerGet(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) registerGet(w http.ResponseWriter, r *http.Request) {
 	utils.RenderTemplate(w, utils.Register, nil)
 }
 
-func (s *ClientServer) registerUser(username string, email string, hashedPassword string) bool {
-	err := s.DB.AddUser(username, email, hashedPassword)
+func (c *Controller) registerUser(username string, email string, hashedPassword string) bool {
+	err := c.DB.AddUser(username, email, hashedPassword)
 	if err != nil {
 		return false
 	}
@@ -272,14 +272,14 @@ func (s *ClientServer) registerUser(username string, email string, hashedPasswor
 	return true
 }
 
-func (s *ClientServer) registerPost(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) registerPost(w http.ResponseWriter, r *http.Request) {
 	usernameFromForm := r.FormValue("username")
 	errorMsg := ""
 	decoder := json.NewDecoder(r.Body)
 	var registerRequest types.RegisterRequest
 	decoder.Decode(&registerRequest)
 	if registerRequest != (types.RegisterRequest{}) && usernameFromForm == "" {
-		s.registerPostFromJson(w, r, registerRequest)
+		c.registerPostFromJson(w, r, registerRequest)
 		return
 	}
 
@@ -291,11 +291,11 @@ func (s *ClientServer) registerPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = utils.YouHaveToEnterAPassword
 	} else if r.FormValue("password") != r.FormValue("password2") {
 		errorMsg = utils.PasswordDoesNotMatchMessage
-	} else if !s.isUsernameAvailable(r.FormValue("username")) {
+	} else if !c.isUsernameAvailable(r.FormValue("username")) {
 		errorMsg = utils.UsernameTaken
 	} else {
 		hashedPasswordInBytes, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), 14)
-		s.registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
+		c.registerUser(r.FormValue("username"), r.FormValue("email"), string(hashedPasswordInBytes))
 	}
 	if errorMsg != "" {
 		data := struct {
@@ -310,13 +310,13 @@ func (s *ClientServer) registerPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *ClientServer) registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
+func (c *Controller) registerPostFromJson(w http.ResponseWriter, r *http.Request, registerRequest types.RegisterRequest) {
 	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 64)
 	if latestErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	s.DB.SetLatest(latest)
+	c.DB.SetLatest(latest)
 	error := ""
 	if registerRequest.Username == "" {
 		error = utils.EnterAUsername
@@ -324,7 +324,7 @@ func (s *ClientServer) registerPostFromJson(w http.ResponseWriter, r *http.Reque
 		error = utils.EnterAValidEmail
 	} else if registerRequest.Pwd == "" {
 		error = utils.YouHaveToEnterAPassword
-	} else if !s.isUsernameAvailable(registerRequest.Username) {
+	} else if !c.isUsernameAvailable(registerRequest.Username) {
 		error = utils.UsernameTaken
 	}
 	if error != "" {
@@ -333,7 +333,7 @@ func (s *ClientServer) registerPostFromJson(w http.ResponseWriter, r *http.Reque
 		json.NewEncoder(w).Encode(types.ErrorMsgResponse{Status: 400, ErrorMsg: error})
 		return
 	} else {
-		res := s.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
+		res := c.registerUser(registerRequest.Username, registerRequest.Email, registerRequest.Pwd)
 		if res {
 			w.WriteHeader(http.StatusNoContent)
 			return

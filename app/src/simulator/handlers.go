@@ -11,29 +11,29 @@ import (
 	"github.com/matt035343/devops/app/src/types"
 )
 
-func (s *SimulatorServer) getUserIDFromUrl(r *http.Request) (int, error) {
+func (c *Controller) getUserIDFromUrl(r *http.Request) (int, error) {
 	username := mux.Vars(r)["username"]
-	u, err := s.DB.GetUserFromUsername(username)
+	u, err := c.DB.GetUserFromUsername(username)
 	return u.UserID, err
 }
 
-func (s *SimulatorServer) getUserID(username string) (int, error) {
-	u, err := s.DB.GetUserFromUsername(username)
+func (c *Controller) getUserID(username string) (int, error) {
+	u, err := c.DB.GetUserFromUsername(username)
 	if err != nil {
 		return 0, err
 	}
 	return u.UserID, nil
 }
 
-func (s *SimulatorServer) tweetsGet(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) tweetsGet(w http.ResponseWriter, r *http.Request) {
 	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 	noMsgs, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 	if latestErr != nil || noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		s.DB.SetLatest(latest)
-		messages, err := s.DB.GetPublicViewMessages(int(noMsgs))
+		c.DB.SetLatest(latest)
+		messages, err := c.DB.GetPublicViewMessages(int(noMsgs))
 		if err != nil {
 			panic(err)
 		}
@@ -45,15 +45,15 @@ func (s *SimulatorServer) tweetsGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *SimulatorServer) tweetsUsername(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) tweetsUsername(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		s.tweetsUsernameGet(w, r)
+		c.tweetsUsernameGet(w, r)
 	} else if r.Method == "POST" {
-		s.tweetsUsernamePost(w, r)
+		c.tweetsUsernamePost(w, r)
 	}
 }
 
-func (s *SimulatorServer) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) tweetsUsernameGet(w http.ResponseWriter, r *http.Request) {
 	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 	noMsgs, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 
@@ -61,14 +61,14 @@ func (s *SimulatorServer) tweetsUsernameGet(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userID, userIDErr := s.getUserIDFromUrl(r)
+	userID, userIDErr := c.getUserIDFromUrl(r)
 	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
 
-		s.DB.SetLatest(latest)
-		messages, err := s.DB.GetUserViewMessages(userID, int(noMsgs))
+		c.DB.SetLatest(latest)
+		messages, err := c.DB.GetUserViewMessages(userID, int(noMsgs))
 		if err != nil {
 			panic(err)
 		}
@@ -80,8 +80,8 @@ func (s *SimulatorServer) tweetsUsernameGet(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (s *SimulatorServer) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
-	userID, userIDErr := s.getUserIDFromUrl(r)
+func (c *Controller) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
+	userID, userIDErr := c.getUserIDFromUrl(r)
 	if userIDErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -94,7 +94,7 @@ func (s *SimulatorServer) tweetsUsernamePost(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		err := s.DB.AddMessage(userID, tweet.Content, time.Now())
+		err := c.DB.AddMessage(userID, tweet.Content, time.Now())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -104,22 +104,22 @@ func (s *SimulatorServer) tweetsUsernamePost(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (s *SimulatorServer) followUsername(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) followUsername(w http.ResponseWriter, r *http.Request) {
 	latest, latestErr := strconv.ParseInt(r.URL.Query().Get("latest"), 10, 32)
 
 	if latestErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	s.DB.SetLatest(latest)
-	userID, userIDErr := s.getUserIDFromUrl(r)
+	c.DB.SetLatest(latest)
+	userID, userIDErr := c.getUserIDFromUrl(r)
 	if userIDErr != nil || userID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	if r.Method == "GET" {
-		s.followUsernameGet(w, r, userID)
+		c.followUsernameGet(w, r, userID)
 	} else if r.Method == "POST" {
 		decoder := json.NewDecoder(r.Body)
 		var followRequest types.FollowRequest
@@ -131,21 +131,21 @@ func (s *SimulatorServer) followUsername(w http.ResponseWriter, r *http.Request)
 
 		isFollow := followRequest.Follow != ""
 		if isFollow {
-			s.followUsernamePost(w, r, userID, followRequest)
+			c.followUsernamePost(w, r, userID, followRequest)
 		} else {
-			s.unFollowUsernamePost(w, r, userID, followRequest)
+			c.unFollowUsernamePost(w, r, userID, followRequest)
 		}
 	}
 }
 
-func (s *SimulatorServer) followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
+func (c *Controller) followUsernameGet(w http.ResponseWriter, r *http.Request, userID int) {
 	noFollowers, noMsgsErr := strconv.ParseInt(r.URL.Query().Get("no"), 10, 64)
 	if noMsgsErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	followers, err := s.DB.GetFollowers(userID, int(noFollowers))
+	followers, err := c.DB.GetFollowers(userID, int(noFollowers))
 	if err != nil {
 		panic(err)
 	}
@@ -154,13 +154,13 @@ func (s *SimulatorServer) followUsernameGet(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(followers)
 }
 
-func (s *SimulatorServer) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
-	followsUserID, followsUserErr := s.getUserID(followRequest.Follow)
+func (c *Controller) followUsernamePost(w http.ResponseWriter, r *http.Request, userID int, followRequest types.FollowRequest) {
+	followsUserID, followsUserErr := c.getUserID(followRequest.Follow)
 	if followsUserErr != nil || followsUserID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
-		followInsertErr := s.DB.AddFollower(userID, followsUserID)
+		followInsertErr := c.DB.AddFollower(userID, followsUserID)
 		if followInsertErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -170,13 +170,13 @@ func (s *SimulatorServer) followUsernamePost(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (s *SimulatorServer) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
-	unfollowsUserID, unfollowsUserErr := s.getUserID(unfollowRequest.Unfollow)
+func (c *Controller) unFollowUsernamePost(w http.ResponseWriter, r *http.Request, userID int, unfollowRequest types.FollowRequest) {
+	unfollowsUserID, unfollowsUserErr := c.getUserID(unfollowRequest.Unfollow)
 	if unfollowsUserErr != nil || unfollowsUserID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
-		unfollowErr := s.DB.DeleteFollower(userID, unfollowsUserID)
+		unfollowErr := c.DB.DeleteFollower(userID, unfollowsUserID)
 		if unfollowErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -186,9 +186,9 @@ func (s *SimulatorServer) unFollowUsernamePost(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (s *SimulatorServer) latest(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) latest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	l, err := s.DB.GetLatest()
+	l, err := c.DB.GetLatest()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
