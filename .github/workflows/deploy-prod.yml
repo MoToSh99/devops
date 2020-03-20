@@ -69,7 +69,7 @@ jobs:
         flags: "-exclude=G104"
         directory: "./app/"
   deploy:
-    needs: [security-check, static-check, shadow-check, error-check, import-test, unit-test, test-linter]
+    needs: [security-check, static-check, shadow-check, error-check, unit-test, test-linter]
     runs-on: ubuntu-latest
     name: Deploy
     steps:
