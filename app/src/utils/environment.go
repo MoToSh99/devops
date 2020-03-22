@@ -15,7 +15,7 @@ func InitEnvironmentVariables() {
 	parent = filepath.Dir(parent)
 	err = godotenv.Load(parent + "/.env")
 	if err != nil {
-		fmt.Println("No env file loaded")
+		fmt.Println(err)
 	}
 }
 

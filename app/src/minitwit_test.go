@@ -79,7 +79,7 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 	return *response
 }
 
-func initServer() {
+func initServer() *server.Server {
 	utils.InitEnvironmentVariables()
 	connectionString := "host=127.0.0.1 port=5432 user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
 	clearDatabase(connectionString)
