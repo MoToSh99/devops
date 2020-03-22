@@ -5,6 +5,7 @@ import (
 	"github.com/matt035343/devops/app/src/types"
 )
 
+//GetLatest Retrieves the latest sequence ID from the database
 func (d *Database) GetLatest() (l types.LatestResponse, err error) {
 	err = d.db.Model(&types.LatestResponse{}).First(&l).Error
 	if err == gorm.ErrRecordNotFound {
@@ -14,6 +15,7 @@ func (d *Database) GetLatest() (l types.LatestResponse, err error) {
 	return l, err
 }
 
+//SetLatest Saves the latest sequence ID to the database
 func (d *Database) SetLatest(latest int64) (err error) {
 	l, err := d.GetLatest()
 	if err != nil {

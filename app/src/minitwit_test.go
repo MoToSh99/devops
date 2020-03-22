@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/matt035343/devops/app/src/client"
+	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
 
@@ -72,9 +75,14 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 	return *response
 }
 
-func initServer() *server.Server {
-	os.Remove("/tmp/minitwit_test.db")
-	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+func initServer() (s *server.Server) {
+	err := os.Remove("/tmp/minitwit_test.db")
+	if err == nil {
+		fmt.Println("Test database removed")
+	}
+	s = server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+	client.AddEndpoints(s, middleware.Unit)
+	return s
 }
 
 func TestRegister(t *testing.T) {
@@ -111,11 +119,10 @@ func TestLoginLogout(t *testing.T) {
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	response2 := logout(serverInstance)
-	html := getHTMLTemplate(t, response2)
 	assert.Equal(t, 302, response2.Code, "Status found")
 
 	response3 := login("user1", "wrongpassword", serverInstance)
-	html = getHTMLTemplate(t, response3)
+	html := getHTMLTemplate(t, response3)
 	assert.True(t, true, strings.Contains(html, ("Invalid password")))
 
 	response4 := login("user2", "wrongpassword", serverInstance)
@@ -161,7 +168,6 @@ func TestTimelines(t *testing.T) {
 	assert.True(t, true, strings.Contains(html, "the message by user1"))
 
 	response = logout(serverInstance)
-	html = getHTMLTemplate(t, response)
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	//user2
@@ -187,7 +193,6 @@ func TestTimelines(t *testing.T) {
 	request, _ = http.NewRequest("GET", "/user1/unfollow", nil)
 	response = *httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(&response, request)
-	html = getHTMLTemplate(t, response)
 	assert.Equal(t, 302, response.Code, "Status found")
 
 	serverInstance.ShutDown()

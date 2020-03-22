@@ -3,7 +3,9 @@
 <h2>
   {{ if eq "timeline" .RequestEndpoint }}
     Public Timeline
-  {{ else if eq "userTimeline" .RequestEndpoint }}
+  {{ else if and (eq "userTimeline" .RequestEndpoint) (.HasError) }}
+    <div class=error><strong>Error:</strong> {{ .ErrorMsg }}</div>
+  {{ else if (eq "userTimeline" .RequestEndpoint) }}
     {{ .UserProfile }}'s Timeline
   {{ else }}
     My Timeline
@@ -17,6 +19,8 @@
       {{ else if .Followed }}
         You are currently following this user.
         <a class=unfollow href="/{{.UserProfile}}/unfollow">Unfollow user</a>.
+      {{ else if and (not .Followed) (.HasError) }}
+      <a class=follow href="/public">Go back to the public timeline</a>.
       {{ else }}
         You are not yet following this user.
         <a class=follow href="/{{.UserProfile}}/follow">Follow user</a>.
@@ -45,7 +49,7 @@
           <small>&mdash; {{ .PublishedDate}}</small>
         </li>
       {{end}}
-    {{else}}
+    {{else if not .HasError}}
     <em>There's no message so far.</em>
     {{end}}
   </ul>
