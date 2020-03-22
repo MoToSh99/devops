@@ -421,7 +421,6 @@ func (s *Server) tweetsUsernamePost(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	var tweet types.TweetRequest
-
 	tweetErr := decoder.Decode(&tweet)
 	if tweetErr != nil || tweet.Content == "" {
 		w.WriteHeader(http.StatusBadRequest)
