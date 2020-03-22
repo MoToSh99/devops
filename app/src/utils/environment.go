@@ -11,6 +11,9 @@ import (
 // InitEnvironmentVariables loads .env file given path
 func InitEnvironmentVariables() {
 	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 	parent := filepath.Dir(wd)
 	parent = filepath.Dir(parent)
 	err = godotenv.Load(parent + "/.env")
