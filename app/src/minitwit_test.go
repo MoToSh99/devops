@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/matt035343/devops/app/src/client"
+	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
 
@@ -73,12 +75,14 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 	return *response
 }
 
-func initServer() *server.Server {
+func initServer() (s *server.Server) {
 	err := os.Remove("/tmp/minitwit_test.db")
 	if err == nil {
 		fmt.Println("Test database removed")
 	}
-	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+	s = server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+	client.AddEndpoints(s, middleware.Unit)
+	return s
 }
 
 func TestRegister(t *testing.T) {
