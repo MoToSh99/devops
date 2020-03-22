@@ -1,5 +1,6 @@
 package types
 
+//User the data model to store information about a user.
 type User struct {
 	UserID       int `gorm:"primary_key"`
 	Username     string
