@@ -20,11 +20,6 @@ jobs:
         PROJECT_PATH: "./app/"
   unit-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        token: [POSTGRES_USER_TESTS]
-        token2: [POSTGRES_PASSWORD_TESTS]
-        token3: [POSTGRES_DB_TESTS]
     name: UnitTest
     services:
       postgres:
