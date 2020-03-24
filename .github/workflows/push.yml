@@ -18,17 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        POSTGRES_USER_TESTS: ${{ secrets.POSTGRES_USER_TESTS }}
-        POSTGRES_PASSWORD_TESTS: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
-        POSTGRES_DB_TESTS: ${{ secrets.POSTGRES_DB_TESTS }}
+        token: ["${{secrets.POSTGRES_USER_TESTS}}"]
     name: UnitTest
     services:
       postgres:
         image: postgres:10.8
         env:
-          POSTGRES_USER: ${{ matrix.POSTGRES_USER_TESTS }}
-          POSTGRES_PASSWORD: ${{ matrix.POSTGRES_PASSWORD_TESTS }}
-          POSTGRES_DB: ${{ matrix.POSTGRES_DB_TESTS }}
+          POSTGRES_USER: ${{ matrix.token }}
+          POSTGRES_PASSWORD: ${{ matrix.token }}
+          POSTGRES_DB: ${{ matrix.token }}
         ports:
         - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
