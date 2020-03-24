@@ -26,9 +26,9 @@ jobs:
       postgres:
         image: postgres:10.8
         env:
-          POSTGRES_USER: ${{ secrets[matrix.token] }}
-          POSTGRES_PASSWORD: ${{ secrets[matrix.token2] }}
-          POSTGRES_DB: ${{ secrets[matrix.token3] }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER_TESTS }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB_TESTS }}
         ports:
         - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
