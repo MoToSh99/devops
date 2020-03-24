@@ -4,6 +4,10 @@ on:
       - 'develop'
       - 'master' 
 name: test
+env:
+  POSTGRES_USER_TESTS: ${{ secrets.POSTGRES_USER_TESTS }}
+  POSTGRES_PASSWORD_TESTS: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
+  POSTGRES_DB_TESTS: ${{ secrets.POSTGRES_DB_TESTS }}
 jobs:
   test-linter:
     runs-on: ubuntu-latest
@@ -26,9 +30,9 @@ jobs:
       postgres:
         image: postgres:10.8
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER_TESTS }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB_TESTS }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER_TESTS }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD_TESTS }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB_TESTS }}
         ports:
         - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
