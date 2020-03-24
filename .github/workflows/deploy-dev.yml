@@ -8,104 +8,124 @@ jobs:
     runs-on: ubuntu-latest
     name: Linter
     steps:
-    - uses: actions/checkout@master
-    - name: linter
-      uses: shoukoo/golang-pipeline/go1.13/linter@master
-      env:
-        PROJECT_PATH: "./app/"
+      - uses: actions/checkout@master
+      - name: linter
+        uses: shoukoo/golang-pipeline/go1.13/linter@master
+        env:
+          PROJECT_PATH: "./app/"
   unit-test:
     runs-on: ubuntu-latest
     name: UnitTest
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER_TESTS }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB_TESTS }}
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-    - uses: actions/checkout@master
-    - name: unittest
-      uses: shoukoo/golang-pipeline/go1.13/test@master
-      env:
-        PROJECT_PATH: "./app/"
+      - uses: actions/checkout@master
+      - name: unittest
+        uses: shoukoo/golang-pipeline/go1.13/test@master
+        env:
+          PROJECT_PATH: "./app/"
+          POSTGRES_USER_TESTS: ${{ secrets.POSTGRES_USER_TESTS }}
+          POSTGRES_PASSWORD_TESTS: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
+          POSTGRES_DB_TESTS: ${{ secrets.POSTGRES_DB_TESTS }}
   error-check:
     runs-on: ubuntu-latest
     name: ErrorCheck
     steps:
-    - uses: actions/checkout@master
-    - name: errorcheck
-      uses: grandcolline/golang-github-actions@v1.1.0
-      with:
-        run: errcheck
-        token: ${{ secrets.GITHUB_TOKEN }}
-        directory: "./app/"
-        flags: "-ignoretests -ignore 'encoding/json'"
+      - uses: actions/checkout@master
+      - name: errorcheck
+        uses: grandcolline/golang-github-actions@v1.1.0
+        with:
+          run: errcheck
+          token: ${{ secrets.GITHUB_TOKEN }}
+          directory: "./app/"
+          flags: "-ignoretests -ignore 'encoding/json'"
   shadow-check:
     runs-on: ubuntu-latest
     name: ShadowCheck
     steps:
-    - uses: actions/checkout@master
-    - name: shadowcheck
-      uses: grandcolline/golang-github-actions@v1.1.0
-      with:
-        run: shadow
-        token: ${{ secrets.GITHUB_TOKEN }}
-        directory: "./app/"
+      - uses: actions/checkout@master
+      - name: shadowcheck
+        uses: grandcolline/golang-github-actions@v1.1.0
+        with:
+          run: shadow
+          token: ${{ secrets.GITHUB_TOKEN }}
+          directory: "./app/"
   static-check:
     runs-on: ubuntu-latest
     name: StaticCheck
     steps:
-    - uses: actions/checkout@master
-    - name: staticcheck
-      uses: grandcolline/golang-github-actions@v1.1.0
-      with:
-        run: staticcheck
-        token: ${{ secrets.GITHUB_TOKEN }}
-        directory: "./app/"
+      - uses: actions/checkout@master
+      - name: staticcheck
+        uses: grandcolline/golang-github-actions@v1.1.0
+        with:
+          run: staticcheck
+          token: ${{ secrets.GITHUB_TOKEN }}
+          directory: "./app/"
   security-check:
     runs-on: ubuntu-latest
     name: SecurityCheck
     steps:
-    - uses: actions/checkout@master
-    - name: securitycheck
-      uses: grandcolline/golang-github-actions@v1.1.0
-      with:
-        run: sec
-        token: ${{ secrets.GITHUB_TOKEN }}
-        flags: "-exclude=G104"
-        directory: "./app/"
+      - uses: actions/checkout@master
+      - name: securitycheck
+        uses: grandcolline/golang-github-actions@v1.1.0
+        with:
+          run: sec
+          token: ${{ secrets.GITHUB_TOKEN }}
+          flags: "-exclude=G104"
+          directory: "./app/"
   deploy:
-    needs: [security-check, static-check, shadow-check, error-check, unit-test, test-linter]
+    needs:
+      [
+        security-check,
+        static-check,
+        shadow-check,
+        error-check,
+        unit-test,
+        test-linter,
+      ]
     runs-on: ubuntu-latest
     name: Deploy
     steps:
-    - uses: actions/checkout@master
-    - name: publish docker
-      uses: elgohr/Publish-Docker-Github-Action@master
-      with:
-        name: gruppe11/devops-test
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        context: "./app"
-        tags: "latest"
-    - name: Deploy on DigitalOcean
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.DO_IP_TEST }}
-        USERNAME: ${{ secrets.ROOT }}
-        PORT: 22
-        KEY: ${{ secrets.SSHKEY }}
-        script: |
-         cd ../var/www/devops/
-         docker rm $(docker ps -a -q) -f
-         docker volume prune
-         docker login
-         ${{ secrets.DOCKER_USERNAME }}
-         ${{ secrets.DOCKER_PASSWORD }}
-         docker-compose -f docker-compose.dev.yaml pull
-         docker-compose -f docker-compose.dev.yaml up -d
+      - uses: actions/checkout@master
+      - name: publish docker
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: gruppe11/devops-test
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          context: "./app"
+          tags: "latest"
+      - name: Deploy on DigitalOcean
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DO_IP_TEST }}
+          USERNAME: ${{ secrets.ROOT }}
+          PORT: 22
+          KEY: ${{ secrets.SSHKEY }}
+          script: |
+            cd ../var/www/devops/
+            docker rm $(docker ps -a -q) -f
+            docker volume prune
+            docker login
+            ${{ secrets.DOCKER_USERNAME }}
+            ${{ secrets.DOCKER_PASSWORD }}
+            docker-compose -f docker-compose.dev.yaml pull
+            docker-compose -f docker-compose.dev.yaml up -d
   integration-test:
     needs: [deploy]
     runs-on: ubuntu-latest
     name: IntegrationTest
     steps:
-    - uses: actions/checkout@master
-    - name: Scenario test
-      run: |
-        cd simulator
-        python3 minitwit_simulator.py "http://142.93.238.65/simulator" | grep . && exit 1 || exit 0
-
+      - uses: actions/checkout@master
+      - name: Scenario test
+        run: |
+          cd simulator
+          python3 minitwit_simulator.py "http://142.93.238.65/simulator" | grep . && exit 1 || exit 0
