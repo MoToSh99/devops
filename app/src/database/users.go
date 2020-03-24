@@ -24,3 +24,9 @@ func (d *Database) GetUserFromUsername(username string) (user types.User, err er
 	err = d.db.Where(&types.User{Username: username}).First(&user).Error
 	return user, err
 }
+
+//IsUsernameAvailable Returns a boolean whether the given username already exists in the database.
+func (d *Database) IsUsernameAvailable(username string) bool {
+	_, err := d.GetUserFromUsername(username)
+	return err != nil
+}

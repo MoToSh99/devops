@@ -81,7 +81,7 @@ var UsersUnfollowed = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 //HTTPResponseCodeMonitor Middleware for recording HTTP response codes.
-func HTTPResponseCodeMonitor(f handler) handler {
+func HTTPResponseCodeMonitor(f Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		writer := &responseCodeMonitorWriter{
 			w, http.StatusOK,
@@ -92,7 +92,7 @@ func HTTPResponseCodeMonitor(f handler) handler {
 }
 
 //HTTPResponseTimeMonitor Middleware for recording reponse times.
-func HTTPResponseTimeMonitor(f handler) handler {
+func HTTPResponseTimeMonitor(f Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		f(w, r)
@@ -104,7 +104,7 @@ func HTTPResponseTimeMonitor(f handler) handler {
 var requests []time.Time
 
 //HTTPRequestCountMonitor Middleware for recording incoming requests.
-func HTTPRequestCountMonitor(f handler) handler {
+func HTTPRequestCountMonitor(f Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, time.Now())
 		f(w, r)

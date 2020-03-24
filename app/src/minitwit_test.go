@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/matt035343/devops/app/src/client"
+	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
 
@@ -72,9 +75,14 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 	return *response
 }
 
-func initServer() *server.Server {
-	os.Remove("/tmp/minitwit_test.db")
-	return server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+func initServer() (s *server.Server) {
+	err := os.Remove("/tmp/minitwit_test.db")
+	if err == nil {
+		fmt.Println("Test database removed")
+	}
+	s = server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+	client.AddEndpoints(s, middleware.Unit)
+	return s
 }
 
 func TestRegister(t *testing.T) {

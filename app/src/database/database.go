@@ -17,13 +17,19 @@ func New(gdb *gorm.DB) *Database {
 
 //CloseDatabase Closes the database connection of the wrapped instance.
 func (d *Database) CloseDatabase() {
-	d.db.Close()
+	err := d.db.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 //ConnectDatabase Connects to a database given the dialect and connection string.
 func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
 	db, err := gorm.Open(databaseDialect, connectionString)
-	autoMigrate(db)
+	if err != nil {
+		return nil, err
+	}
+	err = autoMigrate(db)
 	return New(db), err
 }
 
