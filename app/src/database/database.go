@@ -3,6 +3,7 @@ package database
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/matt035343/devops/app/src/types"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 //Database Wrapper to a GORM database instance.

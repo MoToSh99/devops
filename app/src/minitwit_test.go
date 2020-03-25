@@ -7,14 +7,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/matt035343/devops/app/src/client"
 	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/server"
 	"github.com/matt035343/devops/app/src/types"
+	"github.com/matt035343/devops/app/src/utils"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,6 +32,8 @@ func getHTMLTemplate(t *testing.T, resp httptest.ResponseRecorder) string {
 
 func register(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
+	gob.Register(&types.User{})
+
 	if password2 == "" {
 		password2 = password
 	}
@@ -52,6 +56,7 @@ func login(username string, password string, serverInstance *server.Server) http
 
 func registerAndLogin(username string, password string, password2 string, email string, serverInstance *server.Server) httptest.ResponseRecorder {
 	form := url.Values{}
+	gob.Register(&types.User{})
 	request, _ := http.NewRequest("POST", "/register?username="+username+"&email="+email+"&password="+password+"&password2="+password2, strings.NewReader(form.Encode()))
 	response := httptest.NewRecorder()
 	serverInstance.Router.ServeHTTP(response, request)
@@ -75,14 +80,25 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 	return *response
 }
 
-func initServer() (s *server.Server) {
-	err := os.Remove("/tmp/minitwit_test.db")
-	if err == nil {
-		fmt.Println("Test database removed")
-	}
-	s = server.CreateNewServer("sqlite3", "/tmp/minitwit_test.db")
+func initServer() *server.Server {
+	utils.InitEnvironmentVariables()
+	connectionString := "host=" + utils.GetEnvironmentVariable("POSTGRES_HOST_TESTS") + " port=" + utils.GetEnvironmentVariable("POSTGRES_PORT_TESTS") + " user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
+	fmt.Print(connectionString);
+	clearDatabase(connectionString)
+	s := server.CreateNewServer("postgres", connectionString)
 	client.AddEndpoints(s, middleware.Unit)
 	return s
+}
+
+func clearDatabase(connectionString string) {
+	db, err := gorm.Open("postgres", connectionString)
+	if err != nil {
+		panic(err)
+	}
+	db.Delete(&types.User{})
+	db.Delete(&types.Follower{})
+	db.Delete(&types.Message{})
+	db.Delete(&types.LatestResponse{})
 }
 
 func TestRegister(t *testing.T) {
@@ -114,7 +130,6 @@ func TestRegister(t *testing.T) {
 func TestLoginLogout(t *testing.T) {
 	serverInstance := initServer()
 
-	gob.Register(&types.User{})
 	response := registerAndLogin("user1", "default", "default", "example@hotmail.com", serverInstance)
 	assert.Equal(t, 302, response.Code, "Status found")
 
