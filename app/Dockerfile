@@ -5,7 +5,6 @@ RUN apk --no-cache add gcc g++ make git
 WORKDIR /devops/src
 COPY src .
 
-
 WORKDIR /devops
 COPY go.mod .
 COPY go.sum .
@@ -20,7 +19,6 @@ WORKDIR /usr/bin
 
 COPY --from=build /devops/src/static /usr/bin/src/static
 COPY --from=build /devops/bin /go/bin
-
-
 EXPOSE 5000
+
 ENTRYPOINT ["/go/bin/web-app"]
