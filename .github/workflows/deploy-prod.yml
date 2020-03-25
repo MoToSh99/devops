@@ -16,25 +16,33 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     name: UnitTest
+    container:
+      image: ubuntu:latest
     services:
       postgres:
         image: postgres:10.8
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER_TESTS }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB_TESTS }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: minitwit_test
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@master
       - name: unittest
         uses: shoukoo/golang-pipeline/go1.13/test@master
         env:
           PROJECT_PATH: "./app/"
-          POSTGRES_USER_TESTS: ${{ secrets.POSTGRES_USER_TESTS }}
-          POSTGRES_PASSWORD_TESTS: ${{ secrets.POSTGRES_PASSWORD_TESTS }}
-          POSTGRES_DB_TESTS: ${{ secrets.POSTGRES_DB_TESTS }}
+          POSTGRES_HOST_TESTS: postgres #CONTAINER NAME
+          POSTGRES_USER_TESTS: postgres
+          POSTGRES_PASSWORD_TESTS: postgres
+          POSTGRES_DB_TESTS: minitwit_test
+          POSTGRES_PORT_TESTS: ${{ job.services.postgres.ports[5432] }}
   error-check:
     runs-on: ubuntu-latest
     name: ErrorCheck
@@ -116,5 +124,8 @@ jobs:
             docker login
             ${{ secrets.DOCKER_USERNAME }}
             ${{ secrets.DOCKER_PASSWORD }}
+            export POSTGRES_USER=${{secrets.POSTGRES_USER}}
+            export POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}
+            export POSTGRES_DB=${{secrets.POSTGRES_DB}}
             docker-compose -f docker-compose.prod.yaml pull
             docker-compose -f docker-compose.prod.yaml up -d
