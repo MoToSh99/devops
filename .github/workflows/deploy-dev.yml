@@ -118,7 +118,7 @@ jobs:
           USERNAME: ${{ secrets.ROOT }}
           PORT: 22
           KEY: ${{ secrets.SSHKEY }}
-          source: "app/docker-compose.dev.yaml"
+          source: "docker-compose.dev.yaml"
           target: "../var/www/devops/"
       - name: Deploy on DigitalOcean
         uses: appleboy/ssh-action@master
