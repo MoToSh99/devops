@@ -81,7 +81,7 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 
 func initServer() *server.Server {
 	utils.InitEnvironmentVariables()
-	connectionString := "host=127.0.0.1 port=5432 user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
+	connectionString := "host=127.0.0.1 port=" + utils.GetEnvironmentVariable("POSTGRES_PORT_TESTS") + " user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
 	clearDatabase(connectionString)
 	s := server.CreateNewServer("postgres", connectionString)
 	client.AddEndpoints(s, middleware.Unit)
