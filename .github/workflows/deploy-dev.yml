@@ -111,6 +111,15 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           context: "./app"
           tags: "latest"
+      - name: Copy docker-compose to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DO_IP_TEST }}
+          USERNAME: ${{ secrets.ROOT }}
+          PORT: 22
+          KEY: ${{ secrets.SSHKEY }}
+          source: "app/docker-compose.dev.yaml"
+          target: "../var/www/devops/"
       - name: Deploy on DigitalOcean
         uses: appleboy/ssh-action@master
         with:
