@@ -17,6 +17,8 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     name: UnitTest
+    container:
+      image: ubuntu:latest
     services:
       postgres:
         image: postgres:10.8
@@ -25,8 +27,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: minitwit_test
         ports:
-          # will assign a random free host port
-          - 5432/tcp
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -38,6 +39,7 @@ jobs:
         uses: shoukoo/golang-pipeline/go1.13/test@master
         env:
           PROJECT_PATH: "./app/"
+          POSTGRES_HOST_TESTS: postgres #CONTAINER NAME
           POSTGRES_USER_TESTS: postgres
           POSTGRES_PASSWORD_TESTS: postgres
           POSTGRES_DB_TESTS: minitwit_test

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -81,7 +82,8 @@ func addMessage(text string, serverInstance *server.Server) httptest.ResponseRec
 
 func initServer() *server.Server {
 	utils.InitEnvironmentVariables()
-	connectionString := "host=localhost port=" + utils.GetEnvironmentVariable("POSTGRES_PORT_TESTS") + " user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
+	connectionString := "host=" + utils.GetEnvironmentVariable("POSTGRES_HOST_TESTS") + " port=" + utils.GetEnvironmentVariable("POSTGRES_PORT_TESTS") + " user=" + utils.GetEnvironmentVariable("POSTGRES_USER_TESTS") + " dbname=" + utils.GetEnvironmentVariable("POSTGRES_DB_TESTS") + " password=" + utils.GetEnvironmentVariable("POSTGRES_PASSWORD_TESTS") + " sslmode=disable"
+	fmt.Print(connectionString);
 	clearDatabase(connectionString)
 	s := server.CreateNewServer("postgres", connectionString)
 	client.AddEndpoints(s, middleware.Unit)
