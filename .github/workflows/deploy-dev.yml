@@ -148,6 +148,7 @@ jobs:
             export POSTGRES_DB=${{secrets.POSTGRES_DB}}
             docker-compose -f docker-compose.dev.yaml pull
             docker-compose -f docker-compose.dev.yaml up -d
+            pgloader migrate.load
   integration-test:
     needs: [deploy]
     runs-on: ubuntu-latest
