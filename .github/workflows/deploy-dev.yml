@@ -120,6 +120,15 @@ jobs:
           KEY: ${{ secrets.SSHKEY }}
           source: "docker-compose.dev.yaml"
           target: "../var/www/devops/"
+      - name: Copy nginx conf to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DO_IP_TEST }}
+          USERNAME: ${{ secrets.ROOT }}
+          PORT: 22
+          KEY: ${{ secrets.SSHKEY }}
+          source: "nginx/nginx.conf"
+          target: "../var/www/devops/nginx/"
       - name: Deploy on DigitalOcean
         uses: appleboy/ssh-action@master
         with:
