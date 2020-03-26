@@ -20,10 +20,10 @@ func GravatarURL(email string, size int) string {
 }
 
 // ExternalMonitor Monitors another Minitwit server located at the given API URL
-func ExternalMonitor(apiURL string) {
+func ExternalMonitor(url string) {
 	for {
 		t := time.Now()
-		resp, err := http.Get(apiURL)
+		resp, err := http.Get(url)
 		if err != nil {
 			middleware.ExternalMonitorUnssuccessfulRequests.Inc()
 

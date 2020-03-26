@@ -28,7 +28,7 @@ func main() {
 	simulator.AddEndpoints(s, monitorMiddleware)
 	defer s.ShutDown()
 	go middleware.HTTPRequestCounter()
-	go utils.ExternalMonitor("http://157.245.35.115/public")
+	go utils.ExternalMonitor(utils.GetEnvironmentVariable("EXTERNAL_MONITOR_URL"))
 	err := s.Serve(5000)
 	if err != nil {
 		panic(err)
