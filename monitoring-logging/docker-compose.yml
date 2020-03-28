@@ -1,0 +1,82 @@
+version: "3.5"
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    network_mode: host
+
+  grafana:
+    image: grafana/grafana:4.5.2
+    ports:
+      - "3000:3000"
+    network_mode: host
+
+  elasticsearch:
+    network_mode: host
+    build:
+      context: logging/elasticsearch/
+      args:
+        ELK_VERSION: 7.6.0
+    volumes:
+      - type: bind
+        source: ./logging/elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: changeme
+      discovery.type: single-node
+
+  logstash:
+    network_mode: host
+    build:
+      context: logging/logstash/
+      args:
+        ELK_VERSION: 7.6.0
+    volumes:
+      - type: bind
+        source: ./logging/logstash/config/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: true
+      - type: bind
+        source: ./logging/logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    network_mode: host
+    build:
+      context: logging/kibana/
+      args:
+        ELK_VERSION: 7.6.0
+    volumes:
+      - type: bind
+        source: ./logging/kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  elasticsearch:
