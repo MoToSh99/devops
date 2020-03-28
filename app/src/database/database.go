@@ -2,8 +2,8 @@ package database
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/types"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 //Database Wrapper to a GORM database instance.
@@ -20,6 +20,7 @@ func New(gdb *gorm.DB) *Database {
 func (d *Database) CloseDatabase() {
 	err := d.db.Close()
 	if err != nil {
+		log.Error("Could not close DB", err)
 		panic(err)
 	}
 }
@@ -28,9 +29,13 @@ func (d *Database) CloseDatabase() {
 func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
 	db, err := gorm.Open(databaseDialect, connectionString)
 	if err != nil {
+		log.Critical("Could not connect to %s DB", err, databaseDialect)
 		return nil, err
 	}
 	err = autoMigrate(db)
+	if err != nil {
+		log.Critical("Could not auto migrate %s db", err, databaseDialect)
+	}
 	return New(db), err
 }
 
