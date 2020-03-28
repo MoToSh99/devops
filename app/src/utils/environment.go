@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/joho/godotenv"
+	"github.com/matt035343/devops/app/src/log"
 )
 
 // InitEnvironmentVariables loads .env file given path
@@ -17,9 +17,7 @@ func InitEnvironmentVariables() {
 	parent := filepath.Dir(wd)
 	parent = filepath.Dir(parent)
 	err = godotenv.Load(parent + "/.env")
-	if err != nil {
-		fmt.Println(err)
-	}
+	log.CriticalErr("Could not load environment variables", err)
 }
 
 // GetEnvironmentVariable returns env var given key

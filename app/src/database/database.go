@@ -20,7 +20,7 @@ func New(gdb *gorm.DB) *Database {
 func (d *Database) CloseDatabase() {
 	err := d.db.Close()
 	if err != nil {
-		log.Error("Could not close DB", err)
+		log.ErrorErr("Could not close DB", err)
 		panic(err)
 	}
 }
@@ -29,12 +29,14 @@ func (d *Database) CloseDatabase() {
 func ConnectDatabase(databaseDialect, connectionString string) (*Database, error) {
 	db, err := gorm.Open(databaseDialect, connectionString)
 	if err != nil {
-		log.Critical("Could not connect to %s DB", err, databaseDialect)
+		log.CriticalErr("Could not connect to %s DB", err, databaseDialect)
 		return nil, err
 	}
+	log.Info("Database connected")
+
 	err = autoMigrate(db)
 	if err != nil {
-		log.Critical("Could not auto migrate %s db", err, databaseDialect)
+		log.CriticalErr("Could not auto migrate %s db", err, databaseDialect)
 	}
 	return New(db), err
 }
