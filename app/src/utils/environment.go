@@ -17,7 +17,7 @@ func InitEnvironmentVariables() {
 	parent := filepath.Dir(wd)
 	parent = filepath.Dir(parent)
 	err = godotenv.Load(parent + "/.env")
-	log.CriticalErr("Could not load environment variables", err)
+	log.DebugErr("Could not load environment variables", err)
 }
 
 // GetEnvironmentVariable returns env var given key
