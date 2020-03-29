@@ -208,7 +208,7 @@
     "/simulator/fllws/{username}": {
       "get": {
         "summary": "Find the followers of a user",
-        "description": "Returns user ids of the users that follows the provided username",
+        "description": "Returns usernames of the users that follows the provided username",
         "parameters": [
           {
             "name": "username",
@@ -251,7 +251,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Follower"
+                  "$ref": "#/components/schemas/FollowerResponse"
                 }
               }
             }
@@ -384,6 +384,17 @@
           "WhomId": {
             "type": "integer",
             "example": 18
+          }
+        }
+      },
+      "FollowerResponse": {
+        "type": "object",
+        "properties": {
+          "follows": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

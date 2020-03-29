@@ -182,12 +182,23 @@ func (c *Controller) followUsernameGet(w http.ResponseWriter, r *http.Request, u
 	}
 
 	followers, err := c.DB.GetFollowers(userID, int(noFollowers))
+
 	if err != nil {
 		panic(err)
 	}
+	var followerUsernames []string
+	for _, follower := range followers {
+		followerUser, userErr := c.DB.GetUser(follower.WhoID)
+		if userErr != nil {
+			panic(err)
+		}
+		followerUsernames = append(followerUsernames, followerUser.Username)
+	}
+
+	followerResponse := types.FollowerResponse{Follows: followerUsernames}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(followers)
+	err = json.NewEncoder(w).Encode(followerResponse)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
