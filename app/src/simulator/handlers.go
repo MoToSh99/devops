@@ -182,7 +182,6 @@ func (c *Controller) followUsernameGet(w http.ResponseWriter, r *http.Request, u
 	}
 
 	followers, err := c.DB.GetFollowers(userID, int(noFollowers))
-
 	if err != nil {
 		panic(err)
 	}
