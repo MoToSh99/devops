@@ -31,6 +31,7 @@ func main() {
 	simulator.AddEndpoints(s, routeMiddleware)
 	defer s.ShutDown()
 	go middleware.HTTPRequestCounter()
+	go utils.ExternalMonitor(utils.GetEnvironmentVariable("EXTERNAL_MONITOR_URL"))
 	log.Info("Starting server on port 5000")
 	err := s.Serve(5000)
 	if err != nil {
