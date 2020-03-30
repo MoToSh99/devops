@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/matt035343/devops/app/src/log"
 )
 
 var (
@@ -33,6 +35,7 @@ func RenderTemplate(w http.ResponseWriter, route string, data interface{}) error
 	templ, err := template.ParseFiles(route, Layout, Footer)
 	templ = template.Must(templ, err)
 	err = templ.Execute(w, data)
+	log.ErrorErr("Error rendering HTML template", err)
 	return err
 }
 
