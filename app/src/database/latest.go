@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/types"
 )
 
@@ -12,6 +13,7 @@ func (d *Database) GetLatest() (l types.LatestResponse, err error) {
 		l = types.LatestResponse{Latest: 0}
 		err = d.db.Create(&l).Error
 	}
+	log.ErrorErr("Could not get latest sequence number", err)
 	return l, err
 }
 
@@ -22,5 +24,7 @@ func (d *Database) SetLatest(latest int64) (err error) {
 		return err
 	}
 	l.Latest = latest
-	return d.db.Save(&l).Error
+	err = d.db.Save(&l).Error
+	log.ErrorErr("Could not set latest sequence number", err)
+	return err
 }

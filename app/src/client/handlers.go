@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	authentication "github.com/matt035343/devops/app/src/authentication"
+	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/middleware"
 	"github.com/matt035343/devops/app/src/types"
 	"github.com/matt035343/devops/app/src/utils"
@@ -42,8 +42,6 @@ func (c *Controller) timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) publicTimeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("We got a visitor from: " + r.RemoteAddr)
-
 	messages, err := c.DB.GetPublicViewMessages(perPage)
 	if err != nil {
 		panic(err)
@@ -225,6 +223,9 @@ func (c *Controller) loginPost(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		return
+	}
+	if errorMsg != "" {
+		log.Warning("Login failed for username %s with error message: ", username, errorMsg)
 	}
 	err := authentication.PutSessionValue(w, r, "user", user)
 	if err != nil {

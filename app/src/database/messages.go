@@ -3,6 +3,7 @@ package database
 import (
 	"time"
 
+	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/types"
 	"github.com/matt035343/devops/app/src/utils"
 )
@@ -10,6 +11,7 @@ import (
 //GetAllMessages Queries all messages from the database.
 func (d *Database) GetAllMessages() (messages []types.Message, err error) {
 	err = d.db.Model(&types.Message{}).Find(&messages).Error
+	log.WarningErr("Could not get all messages", err)
 	return messages, err
 }
 
@@ -18,15 +20,19 @@ func (d *Database) FlagMessage(messageID int) (err error) {
 	var message types.Message
 	err = d.db.Where(&types.Message{ID: messageID}).First(&message).Error
 	if err != nil {
+		log.WarningErr("Could not get message with ID %d", err, messageID)
 		return err
 	}
 	message.Flagged = true
-	return d.db.Save(&message).Error
+	err = d.db.Save(&message).Error
+	log.WarningErr("Could save flagged message with ID %d", err, messageID)
+	return err
 }
 
 //GetMessages Queries all messages of a user, returns a maximum of limit entries.
 func (d *Database) GetMessages(userID, limit int) (messages []types.Message, err error) {
 	err = d.db.Where(&types.Message{AuthorID: userID}).Limit(limit).Find(&messages).Error
+	log.WarningErr("Could not get messages with userID %d", err, userID)
 	return messages, err
 }
 
@@ -35,6 +41,7 @@ func (d *Database) GetPublicViewMessages(limit int) (messages []types.MessageVie
 	var ms []types.Message
 	err = d.db.Where("flagged = ?", false).Limit(limit).Order("published_date desc").Find(&ms).Error
 	if err != nil {
+		log.WarningErr("Could not get public messages", err)
 		return messages, err
 	}
 	messages = d.convertMessageModelsToViewModels(ms)
@@ -46,6 +53,7 @@ func (d *Database) GetUserViewMessages(userID, limit int) (messages []types.Mess
 	var ms []types.Message
 	err = d.db.Where(&types.Message{AuthorID: userID}).Where("flagged = ?", false).Limit(limit).Order("published_date desc").Find(&ms).Error
 	if err != nil {
+		log.WarningErr("Could not get user messages for userID %d", err, userID)
 		return messages, err
 	}
 	messages = d.convertMessageModelsToViewModels(ms)
@@ -57,6 +65,7 @@ func (d *Database) GetTimelineViewMessages(userID, limit int) (messages []types.
 	var ms []types.Message
 	err = d.db.Table("messages").Where("messages.author_id = ? or messages.author_id in (select whom_id from followers where who_id = ?)", userID, userID).Limit(limit).Order("published_date desc").Find(&ms).Error
 	if err != nil {
+		log.WarningErr("Could not get timeline messages for userID %d", err, userID)
 		return messages, err
 	}
 	messages = d.convertMessageModelsToViewModels(ms)
@@ -83,10 +92,12 @@ func (d *Database) convertMessageModelsToViewModels(ms []types.Message) (message
 
 //AddMessage Creates a new message entry in the database.
 func (d *Database) AddMessage(authorID int, message string, time time.Time) error {
-	return d.db.Create(&types.Message{
+	err := d.db.Create(&types.Message{
 		Text:          message,
 		AuthorID:      authorID,
 		PublishedDate: time.Unix(),
 		Flagged:       false,
 	}).Error
+	log.ErrorErr("Could create message for authorID", err, authorID)
+	return err
 }

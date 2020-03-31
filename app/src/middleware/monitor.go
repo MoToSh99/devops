@@ -135,3 +135,20 @@ func HTTPRequestCounter() {
 		time.Sleep(time.Minute)
 	}
 }
+
+//ExternalMonitorResponseTime A Prometheus histogram for storing the time for the other Minitwit application to respond, given in ms.
+var ExternalMonitorResponseTime = promauto.NewHistogram(prometheus.HistogramOpts{
+	Subsystem: "minitwit",
+	Name:      "external_monitor_response_time",
+	Help:      "The time for the other Minitwit application to respond, given in ms.",
+	Buckets: []float64{
+		0.1, 1.0, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 300.0, 400.0, 500.0, 750.0, 1000.0, 1500.0, 2000.0, 5000.0, 10000.0,
+	},
+})
+
+//ExternalMonitorUnssuccessfulRequests A Prometheus counter the number of unsuccessful requests to an external monitored application.
+var ExternalMonitorUnssuccessfulRequests = promauto.NewCounter(prometheus.CounterOpts{
+	Subsystem: "minitwit",
+	Name:      "external_monitor_unsuccessful_requests",
+	Help:      "The time for the other Minitwit application to respond, given in ms.",
+})
