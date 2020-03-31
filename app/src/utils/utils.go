@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/middleware"
 )
 
@@ -21,13 +22,16 @@ func GravatarURL(email string, size int) string {
 
 // ExternalMonitor Monitors another Minitwit server located at the given API URL
 func ExternalMonitor(url string) {
+	log.Info("Connecting to external server on %s", url)
 	for {
 		t := time.Now()
 		resp, err := http.Get(url + "/latest") /* #nosec G107 */
 		if err != nil {
 			middleware.ExternalMonitorUnssuccessfulRequests.Inc()
+			log.WarningErr("Could not connect to external server to be monitored", err)
 		} else if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			middleware.ExternalMonitorUnssuccessfulRequests.Inc()
+			log.Warning("Could not connect to external server to be monitored, HTTP %d", resp.StatusCode)
 		} else {
 			middleware.ExternalMonitorResponseTime.Observe(float64(time.Since(t).Milliseconds()))
 		}
