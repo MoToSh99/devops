@@ -15,6 +15,7 @@ type responseCodeMonitorWriter struct {
 	statusCode int
 }
 
+//WriteHeads Writes a HTTP status code to the header.
 func (lrw *responseCodeMonitorWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)

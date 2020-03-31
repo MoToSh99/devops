@@ -10,11 +10,14 @@ import (
 func HTTPErrorLoggerMiddleware(f Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Debug("New request from %s to %s", r.RemoteAddr, r.URL)
-		f(w, r)
-		if r.Response.StatusCode < 500 {
-			log.Debug("Request responded with status HTTP %d", r.Response.StatusCode)
+		writer := &responseCodeMonitorWriter{
+			w, http.StatusOK,
+		}
+		f(writer, r)
+		if writer.statusCode < 500 {
+			log.Debug("Request responded with status HTTP %d", writer.statusCode)
 		} else {
-			log.Warning("Request responded with status HTTP %d", r.Response.StatusCode)
+			log.Warning("Request responded with status HTTP %d", writer.statusCode)
 		}
 	}
 }
