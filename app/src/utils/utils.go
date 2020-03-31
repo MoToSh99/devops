@@ -32,6 +32,6 @@ func ExternalMonitor(url string) {
 		} else {
 			middleware.ExternalMonitorResponseTime.Observe(float64(time.Since(t).Milliseconds()))
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Minute)
 	}
 }
