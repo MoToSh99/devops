@@ -23,10 +23,9 @@ func GravatarURL(email string, size int) string {
 func ExternalMonitor(url string) {
 	for {
 		t := time.Now()
-		resp, err := http.Get(url) /* #nosec G107 */
+		resp, err := http.Get(url + "/latest") /* #nosec G107 */
 		if err != nil {
 			middleware.ExternalMonitorUnssuccessfulRequests.Inc()
-
 		} else if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			middleware.ExternalMonitorUnssuccessfulRequests.Inc()
 		} else {
