@@ -298,6 +298,10 @@ func (c *Controller) registerPost(w http.ResponseWriter, r *http.Request) {
 		errorMsg = utils.YouHaveToEnterAPassword
 	} else if r.FormValue("password") != r.FormValue("password2") {
 		errorMsg = utils.PasswordDoesNotMatchMessage
+	} else if len(r.FormValue("password")) < 8 {
+		errorMsg = utils.PasswordMustBeAtleast8Chars
+	} else if !utils.StringContainsUppercase(r.FormValue("password")) {
+		errorMsg = utils.PasswordMustContainAtleastOneUppercase
 	} else if !c.DB.IsUsernameAvailable(r.FormValue("username")) {
 		errorMsg = utils.UsernameTaken
 	} else {

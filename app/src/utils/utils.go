@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/matt035343/devops/app/src/log"
 	"github.com/matt035343/devops/app/src/middleware"
@@ -37,4 +38,14 @@ func ExternalMonitor(url string) {
 		}
 		time.Sleep(time.Minute)
 	}
+}
+
+func StringContainsUppercase(text string) bool {
+	for _, char := range text {
+		res := unicode.IsUpper(char)
+		if res {
+			return true
+		}
+	}
+	return false
 }
